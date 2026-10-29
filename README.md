@@ -3,6 +3,14 @@
 
 **An interactive Python application for construction project monitoring, financial verification, technical quantity analysis, and automated reporting.**
 
+## Live Interactive Dashboard
+
+🚀 [Launch the Interactive Dashboard](https://infrastructure-analytics-demo-4mfqpmmrpqmf9hamcevdrf.streamlit.app)
+
+Explore financial monitoring, automated audits, technical quantity analysis, Excel document processing, and downloadable reports.
+
+*All demonstration data is synthetic.*
+
 ## Project Overview
 
 This application was developed as part of a university internship project in Business Administration.
