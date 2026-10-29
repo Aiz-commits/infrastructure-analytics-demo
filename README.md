@@ -11,6 +11,10 @@ Explore financial monitoring, automated audits, technical quantity analysis, Exc
 
 *All demonstration data is synthetic.*
 
+## Dashboard Preview
+
+![Infrastructure Analytics Dashboard](screenshots/dashboard_overview.png)
+
 ## Project Overview
 
 This application was developed as part of a university internship project in Business Administration.
