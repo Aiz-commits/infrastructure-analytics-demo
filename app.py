@@ -631,8 +631,12 @@ if page == "Document Analysis":
             # Automatic continuity audit summary
     st.subheader("Audit Summary")
     total_checks = len(continuity_df)
+
+    if "continuity_df" not in locals():
+        continuity_df = pd.DataFrame(columns=["Status"])
     if "Status" in continuity_df.columns:
-        review_count = int((continuity_df["Status"] == "REVIEW REQUIRED").sum())
+        review_count = int(
+            (continuity_df["Status"] == "REVIEW REQUIRED").sum())
         passed_count = int((continuity_df["Status"] == "OK").sum())
     else:
         review_count = 0
@@ -646,8 +650,11 @@ if page == "Document Analysis":
         set(range(numbers[0], numbers[-1] + 1)) - set(numbers)
     ) if numbers else []
     if missing_numbers:
-        st.warning("Missing decompte(s): " + ", ".join(f"D{n}" for n in missing_numbers))
+        st.warning("Missing decompte(s): " +
+                   ", ".join(f"D{n}" for n in missing_numbers))
     if review_count > 0:
-        st.warning(f"{review_count} financial continuity discrepancies require investigation.")
+        st.warning(
+            f"{review_count} financial continuity discrepancies require investigation.")
     if not missing_numbers and review_count == 0:
-        st.success("All available continuity checks passed, with no gaps detected.")
+        st.success(
+            "All available continuity checks passed, with no gaps detected.")
