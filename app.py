@@ -629,47 +629,25 @@ if page == "Document Analysis":
             )
 
             # Automatic continuity audit summary
-            st.subheader("Audit Summary")
-
-            total_checks = len(continuity_df)
-            review_count = (
-                continuity_df["Status"] == "REVIEW REQUIRED"
-            ).sum()
-            passed_count = (
-                continuity_df["Status"] == "OK"
-            ).sum()
-
-            col1, col2, col3 = st.columns(3)
-
-            col1.metric("Continuity Checks", total_checks)
-            col2.metric("Passed", int(passed_count))
-            col3.metric("Require Review", int(review_count))
-
-            # Detect gaps in the uploaded decompte sequence
-            numbers = sorted(
-                ordered["Number"].astype(int).unique()
-            )
-
-            missing_numbers = sorted(
-                set(range(numbers[0], numbers[-1] + 1))
-                - set(numbers)
-            ) if numbers else []
-
-            if missing_numbers:
-                st.warning(
-                    "INCOMPLETE DOCUMENTATION: Missing decompte(s): "
-                    + ", ".join(f"D{n}" for n in missing_numbers)
-                    + ". Full continuity cannot be confirmed."
-                )
-
-            if review_count > 0:
-                st.warning(
-                    f"{review_count} financial continuity "
-                    "discrepancy/discrepancies require investigation."
-                )
-
-            if not missing_numbers and review_count == 0:
-                st.success(
-                    "All available consecutive continuity checks passed, "
-                    "with no gaps detected in the uploaded sequence."
-                )
+    st.subheader("Audit Summary")
+    total_checks = len(continuity_df)
+    if "Status" in continuity_df.columns:
+        review_count = int((continuity_df["Status"] == "REVIEW REQUIRED").sum())
+        passed_count = int((continuity_df["Status"] == "OK").sum())
+    else:
+        review_count = 0
+        passed_count = 0
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Continuity Checks", total_checks)
+    col2.metric("Passed", passed_count)
+    col3.metric("Require Review", review_count)
+    numbers = sorted(ordered["Number"].astype(int).unique())
+    missing_numbers = sorted(
+        set(range(numbers[0], numbers[-1] + 1)) - set(numbers)
+    ) if numbers else []
+    if missing_numbers:
+        st.warning("Missing decompte(s): " + ", ".join(f"D{n}" for n in missing_numbers))
+    if review_count > 0:
+        st.warning(f"{review_count} financial continuity discrepancies require investigation.")
+    if not missing_numbers and review_count == 0:
+        st.success("All available continuity checks passed, with no gaps detected.")
