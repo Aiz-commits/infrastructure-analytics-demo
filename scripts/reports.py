@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 import pandas as pd
 from .audit import audit_batch, display_frame
 from .policy import ROOT, amount, load_policy
+from .report_styles import style_report
 
 REPORT_NAMES = {
     'Consolidated Financial Audit': 'rapport_audit_financier.xlsx',
@@ -16,7 +17,7 @@ REPORT_NAMES = {
     'Technical Quantity Audit': 'audit_technique_valide.xlsx',
 }
 RULE_FILES = ['project_config.json', 'scripts/policy.py', 'scripts/decompte_extractor.py',
-              'scripts/workbooks.py', 'scripts/audit.py', 'scripts/reports.py']
+              'scripts/workbooks.py', 'scripts/audit.py', 'scripts/reports.py', 'scripts/report_styles.py']
 
 
 def digest(path):
@@ -96,6 +97,7 @@ def build_reports(root=ROOT):
                 for name, frame in sheets.items():
                     frame.to_excel(writer, sheet_name=name, index=False)
                 metadata.to_excel(writer, sheet_name='Metadata', index=False)
+                style_report(writer.book, filename, sheets, manifest, policy, records, batch.comparisons, technical)
             manifest['artifacts'][filename] = digest(path)
         for filename in definitions:
             (Path(temporary) / filename).replace(output / filename)

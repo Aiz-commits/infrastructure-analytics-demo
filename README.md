@@ -147,3 +147,14 @@ locally for the fixes; Playwright is not a runtime dependency.
 
 This remains an academic portfolio demonstration. AI extraction and report drafting
 are optional future features; deterministic financial checks remain authoritative.
+
+## Downloaded report design
+
+Excel downloads open on a `Report Overview` tab with summary metrics, an audit
+status, a chart, links to the schedules, and the stated demonstration assumptions.
+Detailed tables have filters, frozen headers, readable number formats, status
+colors and landscape print settings. The technical table retains the duplicate
+manual-note source column as a hidden column; its content remains visible in the
+combined `Review reason` field. Existing source sheet names, row-one headers,
+values and first-sheet access remain unchanged for dashboard compatibility.
+Generation times on the overview use Africa/Casablanca; provenance retains UTC.
