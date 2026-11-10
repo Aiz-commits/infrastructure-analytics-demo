@@ -1,0 +1,11 @@
+{
+  "rule_version": "demo-finance-v1",
+  "policy_name": "Synthetic demonstration assumptions — not a contractual or tax opinion",
+  "currency": "DH",
+  "retention_rate": "0.10",
+  "retention_cap": null,
+  "vat_rate": "0.20",
+  "vat_base": "net_after_retention",
+  "tolerance": "0.01",
+  "contract_ttc": "5400000.00"
+}
