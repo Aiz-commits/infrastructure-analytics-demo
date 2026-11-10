@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-10T18:27:12.911821+00:00",
+  "generated_at_utc": "2026-11-10T20:21:31.279701+00:00",
   "rule_version": "demo-finance-v1",
   "policy_name": "Synthetic demonstration assumptions — not a contractual or tax opinion",
   "inputs": {
@@ -15,14 +15,15 @@
     "scripts/decompte_extractor.py": "9f8348433432bc0301fffb347ad048e4ec82dd652b4bacd977840c790e0e9755",
     "scripts/workbooks.py": "bdde4fc8678c44841b10869e74ad0f3906458c2b7c73950f77b61f10601845ba",
     "scripts/audit.py": "3e0dd8fc584c58019bf1d42248323b0f8be272c076c6418dee3f390ccfcaf35e",
-    "scripts/reports.py": "acefaf476f092a8ad9a3225bacf41d196e169394af0041e5e7d117bd8e341995"
+    "scripts/reports.py": "d632edb5620374abbc917495df16aae4089dbc8e25b14391e147dc2aca1b5529",
+    "scripts/report_styles.py": "06e10e2735e8b8007a0c4ea9ebeadeec014912f6e8aff706398ee343d9027330"
   },
   "artifacts": {
-    "financial_analysis.xlsx": "3e22b86f38733400fd45f67d3cd39f60299f6ed9b58982ccddb8bc816e0436ad",
-    "financial_audit.xlsx": "71e9ba247a969b74133c2c3d420fe27f11f7c63d191396137ce73f6954307d1a",
-    "verification_calculs.xlsx": "6f95cced71793a152d2cb33ae76172e21470be07679442ae1fa6352774466953",
-    "verification_retention_tva.xlsx": "6f95cced71793a152d2cb33ae76172e21470be07679442ae1fa6352774466953",
-    "rapport_audit_financier.xlsx": "7c7689516d29b292e128bd4aacdbd57f625cf15defebe2ab22e8b8dd59093ca9",
-    "audit_technique_valide.xlsx": "fbb2db1f74c0d456c333e4628792497b89e3fb4cd97e37bdbdae00f682b2c290"
+    "financial_analysis.xlsx": "bc987faabf748264da9e56a31f8ed6a4ea01acc788fda470578783ea2ad111b7",
+    "financial_audit.xlsx": "17a8a2ab3b138f33f53a1c2cdb9a09cc29d5b6e5d1093d4976babac7690857b6",
+    "verification_calculs.xlsx": "4d1fccc600bd734b9a64dc6c06c552353c972ccf13de0ee0389b3906f6c4c80c",
+    "verification_retention_tva.xlsx": "627e2858185ac330841e95ad1bad514780e388826bf9fc29d8ceaf254b6d8bf3",
+    "rapport_audit_financier.xlsx": "3dd1a377dc3c7d291348cc0c858cafdad64871737844f42c0255c68efcf25268",
+    "audit_technique_valide.xlsx": "9b614328922cb3d5057bd031be2b2cd327e50a60591988ce34dfd6e7051e33e2"
   }
 }

@@ -58,3 +58,31 @@ def test_importing_generator_does_not_write_files(monkeypatch):
     monkeypatch.setattr(Path, 'mkdir', forbidden)
     import generate_demo_decomptes
     importlib.reload(generate_demo_decomptes)
+
+
+def test_reading_view_keeps_machine_readable_tables_and_financial_totals(project):
+    from openpyxl import load_workbook
+    build_reports(project)
+    path = project / 'outputs/rapport_audit_financier.xlsx'
+    workbook = load_workbook(path)
+    assert workbook.active.title == 'Report Overview'
+    assert workbook.worksheets[0].title == 'Continuity_Checks'
+    assert workbook['Report Overview']['A9'].value == 2750000
+    assert workbook['Report Overview']['E9'].value == 495000
+    assert workbook['Report Overview']['I9'].value == 2970000
+    assert workbook['_ChartData'].sheet_state == 'hidden'
+    assert workbook['Report Overview']['A30'].hyperlink.target == "#'Continuity_Checks'!A1"
+    workbook.close()
+    assert len(pd.read_excel(path)) == 3
+
+
+def test_technical_cover_does_not_hide_review_flags(project):
+    from openpyxl import load_workbook
+    build_reports(project)
+    workbook = load_workbook(project / 'outputs/audit_technique_valide.xlsx')
+    cover = workbook['Report Overview']
+    assert cover['A9'].value == 6
+    assert cover['E9'].value == 3
+    assert cover['I9'].value == 3
+    assert cover['A14'].value == 'REVIEW REQUIRED'
+    workbook.close()
