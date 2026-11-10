@@ -44,9 +44,17 @@ This is a point-in-time advisory check, not a security certification.
 
 ## Use
 
-See README.md for installation, tests and report regeneration commands. Python 3.12 is
-required. Existing bundled source statements were preserved. Do not reuse this public
+See README.md for installation, tests and report regeneration commands. Python 3.12–3.14 is
+supported. Existing bundled source statements were preserved. Do not reuse this public
 demo for confidential records without a separate authorization and retention design.
 
 The included patch is intended for the exact base commit above. Apply on a separate
 branch and review before merging; a merge to a watched Streamlit branch may deploy.
+
+## Python 3.14 deployment recovery
+
+The earlier pandas 2.2.3 pin lacked a CPython 3.14 wheel and caused the existing
+Streamlit deployment to attempt a source build. Pandas is now pinned to 3.1.1,
+which supplies CPython 3.14 wheels. The runtime lock is regenerated and CI tests
+binary-only runtime installation on both Python 3.12 and 3.14. Existing app URLs
+and financial rules are preserved; creating another Streamlit app is unnecessary.
