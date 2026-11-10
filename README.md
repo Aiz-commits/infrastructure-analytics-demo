@@ -6,20 +6,20 @@ This public demo is for synthetic uploads only; it is not a production financial
 
 ## Run locally
 
-Use Python **3.12** (also select Python 3.12 in Streamlit Community Cloud settings).
+Supports Python **3.12–3.14**, including the existing Streamlit deployment’s Python 3.14 runtime. No app recreation or Python-setting change is required.
 
 ```bash
 python -m venv .venv
 # Linux/macOS:
 source .venv/bin/activate
 # Windows PowerShell: .venv\Scripts\Activate.ps1
-python -m pip install -r requirements.lock
+python -m pip install --only-binary=:all: -r requirements.lock
 python -m scripts.reports
 streamlit run app.py
 ```
 
 `requirements.txt` pins the direct runtime dependencies. `requirements.lock` pins
-the resolved Linux/Python 3.12 runtime dependencies. Other platforms may add platform-specific dependencies. The app has no external API keys.
+the resolved Linux runtime dependencies, tested on Python 3.12 and 3.14. Other platforms may add platform-specific dependencies. The app has no external API keys.
 The repository contains regenerated reports so rebuilding is only necessary after
 changing source statements, technical input, calculation code or project configuration.
 
@@ -131,11 +131,13 @@ require regenerating the synthetic sources so their stated amounts match the rul
 ## Tests and dependency checks
 
 ```bash
-python -m pip install -r requirements.lock -r requirements-dev.txt
+python -m pip install --only-binary=:all: -r requirements.lock -r requirements-dev.txt
 python -m pytest
 python -m pip_audit -r requirements.lock
 python -m pip check
 ```
+
+CI installs runtime dependencies as binary wheels and tests Python 3.12 and 3.14, preventing a repeat of the pandas source-build problem on Python 3.14.
 
 Tests cover financial rounding and policy variants, both layouts, cumulative
 identities, source selection, missing/duplicate/conflicting identity, gaps, resource
