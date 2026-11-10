@@ -1,0 +1,28 @@
+{
+  "generated_at_utc": "2026-11-10T18:27:12.911821+00:00",
+  "rule_version": "demo-finance-v1",
+  "policy_name": "Synthetic demonstration assumptions — not a contractual or tax opinion",
+  "inputs": {
+    "demo_decomptes/DEMO_DP_N1.xlsx": "5a2aaa73333004dc479352f2bebe861c81878af268f45013df3e80daec3618f9",
+    "demo_decomptes/DEMO_DP_N2.xlsx": "a5d08475d476a43336c225a96206086d7dfc586575940b0a26fd762eaa8977da",
+    "demo_decomptes/DEMO_DP_N3.xlsx": "4c6d3dd7ecd81f28b0389af02af16cdddb818467140e99b85e57a7166a551e7e",
+    "demo_decomptes/DEMO_DP_N4.xlsx": "584fbf69906da2ad64f679682407acd4e5274655bc3e766c3a8ad02975622fc6",
+    "scripts/demo_technical.csv": "79038ad6b684f28e176aeba5d19b01e44eb0b16445d1b1ee9b5a1705af07e807"
+  },
+  "rules": {
+    "project_config.json": "02d4599f4f200333a986a9e55bcd43c3497c446580f9f4006f6e17a28701a05e",
+    "scripts/policy.py": "f7b97d71d599834b6a650556d2d0d0827d20633961142ef5abcb8985c9ab7123",
+    "scripts/decompte_extractor.py": "9f8348433432bc0301fffb347ad048e4ec82dd652b4bacd977840c790e0e9755",
+    "scripts/workbooks.py": "bdde4fc8678c44841b10869e74ad0f3906458c2b7c73950f77b61f10601845ba",
+    "scripts/audit.py": "3e0dd8fc584c58019bf1d42248323b0f8be272c076c6418dee3f390ccfcaf35e",
+    "scripts/reports.py": "acefaf476f092a8ad9a3225bacf41d196e169394af0041e5e7d117bd8e341995"
+  },
+  "artifacts": {
+    "financial_analysis.xlsx": "3e22b86f38733400fd45f67d3cd39f60299f6ed9b58982ccddb8bc816e0436ad",
+    "financial_audit.xlsx": "71e9ba247a969b74133c2c3d420fe27f11f7c63d191396137ce73f6954307d1a",
+    "verification_calculs.xlsx": "6f95cced71793a152d2cb33ae76172e21470be07679442ae1fa6352774466953",
+    "verification_retention_tva.xlsx": "6f95cced71793a152d2cb33ae76172e21470be07679442ae1fa6352774466953",
+    "rapport_audit_financier.xlsx": "7c7689516d29b292e128bd4aacdbd57f625cf15defebe2ab22e8b8dd59093ca9",
+    "audit_technique_valide.xlsx": "fbb2db1f74c0d456c333e4628792497b89e3fb4cd97e37bdbdae00f682b2c290"
+  }
+}

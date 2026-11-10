@@ -1,0 +1,7 @@
+Categorie,Code,Designation D4,Unite D4,Quantite marche D4,Precedent D4,Actuel D4,Cumul D4,Manual review note
+ATT VR IS,DEMO-VR-01,Road excavation,m3,1200,400,350,750,
+ATT VR IS,DEMO-VR-02,Road foundation layer,m3,900,300,450,750,Illustrative manual review flag; supporting technical evidence not provided.
+ATT EP IS,DEMO-EP-01,Stormwater pipes,ml,800,250,300,550,
+ATT EP IS,DEMO-EP-02,Drainage manholes,U,25,8,10,18,Illustrative manual review flag; supporting technical evidence not provided.
+ATT EU IS,DEMO-EU-01,Wastewater pipes,ml,650,200,250,450,
+ATT EU IS,DEMO-EU-02,Inspection chambers,U,20,6,8,14,Illustrative manual review flag; supporting technical evidence not provided.

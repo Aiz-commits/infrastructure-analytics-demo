@@ -1,4 +1,5 @@
-streamlit
-pandas
-openpyxl
-altair
+streamlit==1.67.0
+pandas==2.2.3
+openpyxl==3.1.5
+altair==6.3.0
+defusedxml==0.7.1
