@@ -72,6 +72,24 @@ and drafts the audit memo and contractor email for human approval.
   `DEMO_DP_N5.xlsx` has two planted problems: a 12,300.00 DH continuity gap with D4,
   and VAT 1,000.00 DH above 20% of net.
 
+## Public history and uptime
+
+- **What is saved:** each Approve/Reject on the two bundled synthetic examples, with the values
+  read, every check, the app-produced memo and email, and the decision (Postgres on Neon free plan).
+  Power BI can read the flat view `v_controller_decisions`.
+- **Never saved:** uploaded files, runs whose values were edited in "Confirm values", and any text
+  a visitor types into the memo or email (only an `edited` yes/no flag is kept).
+- **Limits:** 5 saved decisions per browser session, one per file and language; identical runs
+  within 10 minutes are skipped; at most 200 runs per UTC day; texts capped at 5,000 characters.
+- **Key:** `DATABASE_URL = "postgresql://..."` in `.streamlit/secrets.toml` (git-ignored) or
+  Streamlit Cloud → Settings → Secrets. Tables are created on first use. Without it the section
+  says "Public history not configured"; if the database is down the page keeps working.
+  After changing the secret on Streamlit Cloud, reboot the app so the new connection is used.
+- **Uptime:** Neon wakes on the next query by itself. Streamlit Community Cloud sleeps quiet apps,
+  so `.github/workflows/keep-awake.yml` opens the app every 6 hours. Set the repository variable
+  `APP_URL` (Settings → Secrets and variables → Actions → Variables). GitHub pauses scheduled
+  workflows after 60 days without commits; push any commit, or re-enable it when GitHub emails you.
+
 ## Financial assumptions
 
 `project_config.json` explicitly defines the demonstration rules:
