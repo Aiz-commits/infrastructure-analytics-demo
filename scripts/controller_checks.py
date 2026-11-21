@@ -67,6 +67,20 @@ def apply_edits(statement, edits, *, project=None, number=None):
                      statement.number if number is None else number, values)
 
 
+def parse_edits(raw_values):
+    """Reviewer-typed values -> (edits, fields that are not valid amounts). Blank/NaN means 'not found'."""
+    edits, bad = {}, []
+    for field, raw in raw_values.items():
+        if raw is None or (isinstance(raw, float) and raw != raw):
+            edits[field] = None
+            continue
+        try:
+            edits[field] = amount(raw)
+        except ValueError:
+            bad.append(field)
+    return edits, bad
+
+
 def previous_from_history(current, folder=HISTORY_DIR):
     if current.number is None or not current.project:
         return None

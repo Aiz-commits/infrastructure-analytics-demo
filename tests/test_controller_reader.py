@@ -83,6 +83,14 @@ def test_prompt_contains_cells_and_no_math_instruction(new_layout_bytes):
     assert 'H15: 163000' in seen['prompt'] and 'do not compute' in seen['prompt'].lower()
 
 
+@pytest.mark.parametrize('cells', [{}, {'A1': 'Projet', 'B2': 'texte seulement'}])
+def test_sheet_without_numbers_raises_before_any_ai_call(cells):
+    calls = []
+    with pytest.raises(ValueError, match='does not look like a décompte'):
+        read_with_ai(workbook_bytes_from(cells), 'k', ask=lambda *a: calls.append(a) or GOOD_CELLS)
+    assert calls == []
+
+
 def test_too_many_cells_raises():
     data = workbook_bytes_from({f'A{row}': row for row in range(1, MAX_AI_CELLS + 2)})
     with pytest.raises(ValueError):

@@ -2,7 +2,7 @@ from dataclasses import replace
 from decimal import Decimal
 import pytest
 from scripts.controller_checks import (EXAMPLES_DIR, FIELDS, SOURCE_AI, SOURCE_EDITED, SOURCE_FIXED, ReadValue,
-                                       Statement, apply_edits, from_extractor, previous_from_history,
+                                       Statement, apply_edits, from_extractor, parse_edits, previous_from_history,
                                        review_count, run_checks)
 from scripts.decompte_extractor import extract_decompte
 from scripts.policy import load_policy
@@ -98,6 +98,13 @@ def test_uncertain_value_is_warning():
 def test_vat_base_works_ht_uses_works():
     policy = replace(POLICY, vat_base='works_ht')
     assert severities(run_checks(stmt(vat='20.00', ttc='110.00'), None, policy))['vat'] == 'OK'
+
+
+def test_parse_edits_reports_bad_values_instead_of_raising():
+    edits, bad = parse_edits({'works': 900000.0, 'vat': '900 000,00', 'net': float('nan'), 'ttc': None,
+                              'retention': '1e30'})
+    assert edits == {'works': Decimal('900000.00'), 'net': None, 'ttc': None}
+    assert sorted(bad) == ['retention', 'vat']
 
 
 def test_apply_edits_marks_source():

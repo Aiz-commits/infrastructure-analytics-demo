@@ -10,10 +10,10 @@ from scripts.ai_reader import MAX_UPLOAD_BYTES, read_with_ai
 from scripts.ai_writer import Texts, findings_json, write_texts
 from scripts.audit import all_passed, audit_batch, display_frame
 from scripts.controller_checks import (EXAMPLES_DIR, FIELDS, LABELS, SOURCE_AI, apply_edits, from_extractor,
-                                       previous_from_history, review_count, run_checks)
+                                       parse_edits, previous_from_history, review_count, run_checks)
 from scripts.controller_review import email_eml, memo_markdown, trail_row
 from scripts.decompte_extractor import extract_decompte
-from scripts.policy import amount, load_policy
+from scripts.policy import load_policy
 from scripts.reports import REPORT_NAMES, verified_report
 from scripts.workbooks import MAX_FILES, preview_workbook, workbook_bytes
 
@@ -144,7 +144,8 @@ def gemini_key():
 
 
 def ai_call_allowed(cache_key):
-    """Max AI_CALL_LIMIT distinct AI requests per browser session; repeats of the same request are free."""
+    """Max AI_CALL_LIMIT distinct AI requests per browser session. A repeat of a successful request is a
+    cache hit (no call). Callers skip requests listed in ctrl_ai_failed, so failures never retry on reruns."""
     seen = st.session_state.setdefault('ctrl_ai_seen', set())
     if cache_key in seen:
         return True
@@ -187,13 +188,18 @@ def read_values(source, key, allow_ai):
         return None, 'Layout not supported by the fixed reader. Tick the privacy box above to allow AI reading.'
     if not key:
         return None, 'Layout not supported by the fixed reader, and AI is offline (template mode). Use a standard-layout décompte.'
-    if not ai_call_allowed((source['digest'], 'read')):
+    unavailable = 'AI reading is unavailable right now (quota or network). Try again in a new session.'
+    cache_key = (source['digest'], 'read')
+    if cache_key in st.session_state.setdefault('ctrl_ai_failed', set()):
+        return None, unavailable
+    if not ai_call_allowed(cache_key):
         return None, f'AI limit reached for this session ({AI_CALL_LIMIT} calls). Use a standard-layout décompte.'
     try:
         with st.spinner('Gemini is locating the values…'):
             return cached_ai_read(source['digest'], data, key), None
     except NotCached:
-        return None, 'AI reading is unavailable right now (quota or network). Try again later.'
+        st.session_state['ctrl_ai_failed'].add(cache_key)
+        return None, unavailable
 
 
 def values_frame(statement):
@@ -218,7 +224,11 @@ def confirm_values(statement, digest):
                             value=statement.number or 0, key=f'ctrl_number_{digest[:12]}')
     if not st.button('Confirm values', key='ctrl_confirm', type='primary'):
         return None
-    edits = {f: None if pd.isna(x) else amount(x) for f, x in zip(FIELDS, edited['Value DH'])}
+    edits, bad = parse_edits(dict(zip(FIELDS, edited['Value DH'].tolist())))
+    if bad:
+        st.error('Not a valid amount: ' + ', '.join(LABELS[f] for f in bad) +
+                 '. Type digits only, with a dot for decimals (e.g. 900000.00), or leave the cell empty.')
+        return None
     confirmed[digest] = apply_edits(statement, edits, project=project.strip(), number=int(number) or None)
     return confirmed[digest]
 
@@ -332,13 +342,17 @@ def controller_page():
     st.dataframe(findings_frame(findings), hide_index=True, width='stretch')
     texts, cache_key = None, (source['digest'], language)
     if key and allow_ai:
-        if ai_call_allowed(cache_key):
+        failed = st.session_state.setdefault('ctrl_ai_failed', set())
+        if cache_key in failed:
+            st.caption('AI text unavailable or failed the number check; template text shown.')
+        elif ai_call_allowed(cache_key):
             payload = findings_json(findings, statement.project, statement.number)
             try:
                 with st.spinner('Gemini is drafting the memo and email…'):
                     texts = cached_texts(source['digest'], language, payload, findings, key,
                                          statement.project, statement.number)
             except NotCached:
+                failed.add(cache_key)
                 st.caption('AI text unavailable or failed the number check; template text shown.')
         else:
             st.caption(f'AI limit reached for this session ({AI_CALL_LIMIT} calls); template text shown.')

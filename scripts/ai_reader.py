@@ -119,7 +119,10 @@ def build_prompt(text):
 
 
 def read_with_ai(data, api_key, ask=llm.ask_json):
-    answer = ask(build_prompt(cell_text(data)), SCHEMA, api_key)
+    cells, _, _ = _sheet_cells(data)
+    if not any(_number_value(value) is not None for value in cells.values()):
+        raise ValueError('The first sheet has no numeric cells; it does not look like a décompte.')
+    answer = ask(build_prompt('\n'.join(f'{a}: {v}' for a, v in cells.items())), SCHEMA, api_key)
     if not isinstance(answer, dict):
         return None
     return trace(data, answer)

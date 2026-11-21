@@ -81,6 +81,22 @@ def test_fake_ai_reader_needs_confirm():
     assert all_text(app).count('REVIEW') >= 2
 
 
+def test_failed_ai_text_is_not_retried_on_every_rerun():
+    calls = []
+
+    def invented_numbers(prompt, api_key, config, client_factory):
+        calls.append(prompt)
+        return '### MEMO\nGap 99,999.00 DH.\n### EMAIL\nSubject: x\nBody 99,999.00 DH.'
+    with patch('scripts.llm._generate', side_effect=invented_numbers):
+        app = click(open_page(secret='test-key'), 'ctrl_example')
+        after_click = len(calls)
+        for _ in range(3):
+            app.run(timeout=30)
+    assert after_click == 2  # one try + one retry, then template
+    assert len(calls) == after_click
+    assert not app.exception
+
+
 def test_upload_too_big_is_rejected():
     app = open_page(single=upload('DP_N5.xlsx', b'0' * (2 * 1024 * 1024 + 1)))
     assert not app.exception
