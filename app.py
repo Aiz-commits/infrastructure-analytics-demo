@@ -9,13 +9,14 @@ import streamlit as st
 from scripts.ai_reader import MAX_UPLOAD_BYTES, read_with_ai
 from scripts.ai_writer import Texts, findings_json, write_texts
 from scripts.audit import all_passed, audit_batch, display_frame
-from scripts.controller_checks import (EXAMPLES_DIR, FIELDS, LABELS, SOURCE_AI, apply_edits, from_extractor,
-                                       parse_edits, previous_from_history, review_count, run_checks)
+from scripts.controller_checks import (EXAMPLES_DIR, FIELDS, LABELS, SOURCE_AI, SOURCE_EDITED, apply_edits,
+                                       from_extractor, parse_edits, previous_from_history, review_count, run_checks)
 from scripts.controller_review import email_eml, memo_markdown, trail_row
 from scripts.decompte_extractor import extract_decompte
 from scripts.policy import load_policy
 from scripts.reports import REPORT_NAMES, verified_report
 from scripts.workbooks import MAX_FILES, preview_workbook, workbook_bytes
+from ui.history_section import mark_values_edited, render_public_history, save_decision
 
 CONTROLLER_PAGE = '🤖 AI Controller'
 st.set_page_config(page_title='Construction Project Monitoring', page_icon='🏗️', layout='wide')
@@ -230,7 +231,11 @@ def confirm_values(statement, digest):
                  '. Type digits only, with a dot for decimals (e.g. 900000.00), or leave the cell empty.')
         return None
     confirmed[digest] = apply_edits(statement, edits, project=project.strip(), number=int(number) or None)
-    return confirmed[digest]
+    result = confirmed[digest]
+    if (any(v.source == SOURCE_EDITED for v in result.values.values())
+            or (result.project, result.number) != (statement.project, statement.number)):
+        mark_values_edited(digest)
+    return result
 
 
 def previous_values(source, previous_upload):
@@ -259,16 +264,18 @@ def review_texts(texts, source, statement, tag):
     clicked = 'Approved' if a.button('✅ Approve', key='ctrl_approve') else None
     clicked = 'Rejected' if b.button('❌ Reject', key='ctrl_reject') else clicked
     decisions = st.session_state.setdefault('ctrl_decisions', {})
+    new_click = None
     if clicked:
         now = datetime.now(timezone.utc)
         decisions[tag] = (clicked, Texts(memo, subject, body, texts.ai_used), now)
+        new_click = decisions[tag]
         st.session_state.setdefault('ctrl_trail', []).append(trail_row(source['name'], now, texts.ai_used, clicked))
     if tag not in decisions:
-        return None
+        return None, None
     decision, final, now = decisions[tag]
     if decision == 'Rejected':
         st.info(f'Rejected by reviewer — {now:%Y-%m-%d %H:%M UTC}. Nothing was sent.')
-        return decision
+        return decision, new_click
     st.success(f'Approved by reviewer — {now:%Y-%m-%d %H:%M UTC}. Nothing was emailed; download the files below.')
     stem = f'D{statement.number}' if statement.number else 'decompte'
     c, d = st.columns(2)
@@ -276,7 +283,7 @@ def review_texts(texts, source, statement, tag):
                       file_name=f'audit_memo_{stem}.md', mime='text/markdown', key='ctrl_dl_memo')
     d.download_button('⬇ email.eml', email_eml(final, now), file_name=f'email_{stem}.eml',
                       mime='message/rfc822', key='ctrl_dl_eml')
-    return decision
+    return decision, new_click
 
 
 def controller_page():
@@ -360,7 +367,13 @@ def controller_page():
         texts = write_texts(findings, language, policy, None, project=statement.project, number=statement.number)
     steps['Explain'] = '✅'
     st.caption('Drafted by AI (number-checked)' if texts.ai_used else 'Template text (no AI)')
-    decision = review_texts(texts, source, statement, f'{source["digest"][:12]}_{language}')
+    decision, new_click = review_texts(texts, source, statement, f'{source["digest"][:12]}_{language}')
+    if new_click:
+        clicked, final, decided_at = new_click
+        ai_read = any(v.source in (SOURCE_AI, SOURCE_EDITED) for v in statement.values.values())
+        save_decision(source=source, statement=statement, findings=findings, app_texts=texts, final_texts=final,
+                      decision=clicked, decided_at=decided_at, language=language,
+                      read_method='found by AI' if ai_read else 'fixed layout', rule_version=policy.version)
     steps['Review'] = {'Approved': '✅', 'Rejected': '❌'}.get(decision, '⏳')
     show()
     trail = st.session_state.get('ctrl_trail', [])
@@ -374,6 +387,10 @@ if page == CONTROLLER_PAGE:
         controller_page()
     except Exception:
         st.error('Cannot analyze this workbook. Check its format, or try a standard-layout décompte.')
+    try:
+        render_public_history()
+    except Exception:
+        st.info('Public history is temporarily unavailable.')
 elif page != 'Document Analysis':
     try:
         saved_page()
