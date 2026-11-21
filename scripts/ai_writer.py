@@ -131,7 +131,9 @@ def build_prompt(findings, language, project='', number=None):
             '- Never calculate. Use only numbers that appear in the JSON, copied exactly (you may format them).\n'
             '- No cell addresses, no dates, no numbered lists; use "-" bullets.\n'
             '- Neutral tone: say "requires justification". Never say fraud or confirmed error.\n'
-            '- One bullet per REVIEW finding. Mention WARNING and SKIPPED items briefly in the memo only.\n'
+            '- In both the memo and the email, one bullet per REVIEW finding with its stated, expected and '
+            'difference amounts. Mention WARNING and SKIPPED items briefly in the memo only.\n'
+            '- Write amounts with thousands separators and "DH": 12,300.00 DH in English, 12 300,00 DH in French.\n'
             'Output exactly this format:\n### MEMO\n<short audit memo>\n### EMAIL\nSubject: <subject>\n'
             '<polite email to the contractor asking for justification of each REVIEW item>\n\n'
             f'Findings JSON:\n{findings_json(findings, project, number)}')

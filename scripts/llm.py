@@ -1,7 +1,7 @@
 """Thin Gemini wrapper. Every failure returns None so callers fall back to templates."""
 import json
 
-MODEL = 'gemini-2.5-flash'
+MODEL = 'gemini-3.1-flash-lite'  # 2.5-flash is closed to new keys; 3.x flash timed out (504) on 2026-11-21.
 TIMEOUT_MS = 20_000
 
 

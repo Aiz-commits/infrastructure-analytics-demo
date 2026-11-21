@@ -1,6 +1,23 @@
 from io import BytesIO
 import pytest
+import streamlit as st
 from openpyxl import Workbook
+from streamlit import config
+
+
+@pytest.fixture(autouse=True)
+def no_real_gemini(monkeypatch, tmp_path):
+    """Tests never read a local .streamlit/secrets.toml and never reach the real Gemini API."""
+    original = config.get_option('secrets.files')
+    config.set_option('secrets.files', [str(tmp_path / 'no-secrets.toml')])
+    st.secrets._reset()
+
+    def blocked(api_key):
+        raise AssertionError('Real Gemini client built during tests; patch scripts.llm._generate instead.')
+    monkeypatch.setattr('scripts.llm._client', blocked)
+    yield
+    config.set_option('secrets.files', original)
+    st.secrets._reset()
 
 
 @pytest.fixture
