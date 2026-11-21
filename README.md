@@ -19,7 +19,8 @@ streamlit run app.py
 ```
 
 `requirements.txt` pins the direct runtime dependencies. `requirements.lock` pins
-the resolved Linux runtime dependencies, tested on Python 3.12 and 3.14. Other platforms may add platform-specific dependencies. The app has no external API keys.
+the resolved Linux runtime dependencies, tested on Python 3.12 and 3.14. Other platforms may add platform-specific dependencies. The only optional key is
+`GEMINI_API_KEY` for the AI Controller (see below); without it the app runs in template mode.
 The repository contains regenerated reports so rebuilding is only necessary after
 changing source statements, technical input, calculation code or project configuration.
 
@@ -35,6 +36,8 @@ changing source statements, technical input, calculation code or project configu
   in saved demo reports. Choose the worksheet to use for both preview and single-file
   analysis. Multi-file analysis requires one unambiguous supported DP sheet per file.
 - **Report Center:** downloads saved synthetic reports with validated provenance.
+- **🤖 AI Controller:** reads one new statement, checks it, drafts an audit memo and
+  contractor email, and waits for a human Approve/Reject (see below).
 
 Saved reports are deliberately separate from uploaded analysis. The app displays
 their generation time and rule version. Every saved report has a `Metadata` sheet;
@@ -42,6 +45,32 @@ their generation time and rule version. Every saved report has a `Metadata` shee
 missing or stale source/report files prevent saved results from being presented
 as verified. Upload analysis remains available if saved reports are missing.
 This is a consistency check, not a digital signature or evidence of authenticity.
+
+## AI Controller
+
+An AI controller that reads construction payment statements, checks them with Python,
+and drafts the audit memo and contractor email for human approval.
+
+- **The AI never calculates.** Every check is Python with `Decimal` and the rules in
+  `project_config.json`. Gemini only (1) names the cells that hold each value in an
+  unknown layout, and (2) writes the memo and email from the list of findings.
+- **Trace rule:** Python reads every AI-located cell itself. Empty or non-numeric
+  cells become "not found", never guessed. AI-read values must be confirmed by a human
+  before any check runs.
+- **Number guard:** every number in the AI text must match a number in the findings;
+  otherwise it retries once, then falls back to template text.
+- **Human in control:** nothing is emailed. Approve gives a memo `.md` and email `.eml`
+  to download, and adds a row to the session audit trail.
+- **Privacy:** bundled examples use AI. Your own upload is sent to Google Gemini
+  (free tier) only after you tick the consent box. Use synthetic files only.
+- **Limits:** `.xlsx` up to 2 MB, first sheet, max 2,000 non-empty cells sent to AI,
+  10 AI calls per browser session, results cached per file and language.
+- **Key:** put `GEMINI_API_KEY = "..."` in `.streamlit/secrets.toml` (git-ignored) or in
+  Streamlit Cloud → Settings → Secrets. No key = "AI offline — template mode".
+- **Examples:** `controller_examples/` (not `demo_decomptes/`, so saved reports do not
+  change). Rebuild with `python generate_demo_decomptes.py --controller-dir`.
+  `DEMO_DP_N5.xlsx` has two planted problems: a 12,300.00 DH continuity gap with D4,
+  and VAT 1,000.00 DH above 20% of net.
 
 ## Financial assumptions
 
