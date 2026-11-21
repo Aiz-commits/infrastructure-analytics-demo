@@ -108,10 +108,39 @@ def test_template_never_says_fraud(n5_findings, language):
     assert not any(word in text for word in ('fraud', 'fraude', 'error confirmed', 'erreur confirmée'))
 
 
+def test_french_findings_json_has_french_titles(n5_findings):
+    payload = findings_json(n5_findings, project='DEMO PROJECT', number=5, language='fr')
+    assert '"title": "TVA 20% du net HT"' in payload
+    assert '"title": "Continuité avec le décompte précédent (D4 → D5)"' in payload
+    for english in ('Continuity', 'VAT', 'of net HT', 'Retention', 'Statement sequence'):
+        assert english not in payload
+
+
+def test_french_prompt_forbids_severity_jargon(n5_findings):
+    ask = FakeAsk(answer())
+    write_texts(n5_findings, 'fr', POLICY, 'k', ask=ask, project='DEMO PROJECT', number=5)
+    assert 'Continuity' not in ask.prompts[0]
+    assert 'Never write the words OK, WARNING, REVIEW or SKIPPED' in ask.prompts[0]
+
+
+def test_ai_text_with_severity_jargon_falls_back(n5_findings):
+    jargon = answer(memo_extra=' Aucun élément WARNING ou SKIPPED.')
+    ask = FakeAsk(jargon, jargon)
+    texts = write_texts(n5_findings, 'fr', POLICY, 'k', ask=ask, project='DEMO PROJECT', number=5)
+    assert texts.ai_used is False and len(ask.prompts) == 2
+
+
+@pytest.mark.parametrize('language', ['fr', 'en'])
+def test_templates_have_no_severity_jargon(n5_findings, language):
+    texts = template_texts(n5_findings, language, POLICY, project='DEMO PROJECT', number=5)
+    text = f'{texts.memo} {texts.email_subject} {texts.email_body}'
+    assert not any(word in text.split() for word in ('WARNING', 'REVIEW', 'SKIPPED'))
+
+
 def test_prompt_contains_findings_json_only(n5_findings):
     ask = FakeAsk(answer())
     write_texts(n5_findings, 'fr', POLICY, 'k', ask=ask, project='DEMO PROJECT', number=5)
-    assert findings_json(n5_findings, project='DEMO PROJECT', number=5) in ask.prompts[0]
+    assert findings_json(n5_findings, project='DEMO PROJECT', number=5, language='fr') in ask.prompts[0]
     assert 'French' in ask.prompts[0]
     assert '163000' not in ask.prompts[0].replace('163000.00', '')  # only JSON strings, no raw cells
 

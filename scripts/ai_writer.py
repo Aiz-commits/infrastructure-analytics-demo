@@ -12,6 +12,19 @@ TITLES_FR = {'retention': 'Retenue de garantie', 'net': 'Net HT = travaux − re
              'ttc': 'TTC = net HT + TVA', 'cumulative': 'Cumul HT = cumul précédent + travaux du mois',
              'continuity': 'Continuité avec le décompte précédent', 'sequence': 'Suite des numéros de décompte',
              'missing': 'Valeur non trouvée dans le fichier', 'uncertain': 'Libellé incertain pour une valeur lue'}
+FIELDS_FR = {'works': 'travaux du mois HT', 'previous': 'cumul précédent HT', 'cumulative': 'cumul HT',
+             'retention': 'retenue', 'net': 'net HT', 'vat': 'TVA', 'ttc': 'total TTC'}
+# English evidence phrases -> French, longest first so "previous cumulative HT" wins over "cumulative HT".
+EVIDENCE_FR = [('skipped — no previous décompte', 'non vérifié — pas de décompte précédent'),
+               ('not found in the file; never invented', 'non trouvée dans le fichier ; jamais inventée'),
+               ('statement number missing', 'numéro de décompte manquant'), ('consecutive numbers', 'numéros consécutifs'),
+               ('missing input value', 'valeur manquante'), ('sequence gap', 'numéros manquants'),
+               ('different project', 'projet différent'), ('previous available:', 'précédent disponible :'),
+               ('has no matching label', 'sans libellé correspondant'), ('works of month HT', 'travaux du mois HT'),
+               ('previous cumulative HT', 'cumul précédent HT'), ('cumulative HT', 'cumul HT'),
+               ('retention', 'retenue'), ('VAT', 'TVA'), ('projects', 'projets'), (' and ', ' et '),
+               ('cell ', 'cellule ')]
+SEVERITY_WORDS = re.compile(r'\b(WARNING|REVIEW|SKIPPED)\b')
 
 
 @dataclass(frozen=True)
@@ -22,10 +35,18 @@ class Texts:
     ai_used: bool
 
 
-def findings_json(findings, project='', number=None):
-    rows = [{'id': f.id, 'severity': f.severity, 'title': f.title,
+def _evidence(finding, language):
+    text = finding.evidence
+    if language == 'fr':
+        for english, french in EVIDENCE_FR:
+            text = text.replace(english, french)
+    return text
+
+
+def findings_json(findings, project='', number=None, language='en'):
+    rows = [{'id': f.id, 'severity': f.severity, 'title': _label(f, language),
              'amounts': {k: f'{v:.2f}' for k, v in f.amounts.items()},
-             'difference': None if f.difference is None else f'{f.difference:.2f}', 'evidence': f.evidence}
+             'difference': None if f.difference is None else f'{f.difference:.2f}', 'evidence': _evidence(f, language)}
             for f in findings]
     return json.dumps({'project': project, 'statement_number': number, 'currency': 'DH', 'findings': rows},
                       ensure_ascii=False, indent=1)
@@ -75,9 +96,27 @@ def unsupported_numbers(text, allowed, tolerance):
 def _label(finding, language):
     if language != 'fr':
         return finding.title
-    base = TITLES_FR.get(finding.id.split(':')[0], finding.title)
-    pair = _PAIR.search(finding.title)
-    return f'{base} ({pair.group()})' if pair else base
+    kind, _, field = finding.id.partition(':')
+    title, pct = finding.title, re.search(r'\d+%', finding.title)
+    if kind == 'retention' and pct:
+        base = f'Retenue de garantie {pct.group()} des travaux'
+    elif kind == 'vat' and pct:
+        base = f'TVA {pct.group()} du ' + ('net HT' if 'net HT' in title else 'montant des travaux HT')
+    else:
+        base = TITLES_FR.get(kind, title)
+    if field:
+        base = f'{base} : {FIELDS_FR.get(field, field)}'
+    pair = _PAIR.search(title)
+    if pair:
+        base = f'{base} ({pair.group()})'
+    if 'different project' in title:
+        base += ' — projet différent'
+    missing = re.search(r'missing (D\d+(?:, D\d+)*)$', title)
+    if missing:
+        base += f' — manquant : {missing.group(1)}'
+    if '— skipped' in title:
+        base += ' — non vérifié (valeur manquante)'
+    return base
 
 
 def _line(finding, language, with_evidence):
@@ -131,12 +170,15 @@ def build_prompt(findings, language, project='', number=None):
             '- Never calculate. Use only numbers that appear in the JSON, copied exactly (you may format them).\n'
             '- No cell addresses, no dates, no numbered lists; use "-" bullets.\n'
             '- Neutral tone: say "requires justification". Never say fraud or confirmed error.\n'
-            '- In both the memo and the email, one bullet per REVIEW finding with its stated, expected and '
-            'difference amounts. Mention WARNING and SKIPPED items briefly in the memo only.\n'
+            '- In both the memo and the email, one bullet per finding with severity REVIEW, using its title, '
+            'stated, expected and difference amounts. In the memo only, mention findings with severity WARNING '
+            '(points to watch) or SKIPPED (not checked) in one short sentence, or say nothing if there are none.\n'
+            '- Never write the words OK, WARNING, REVIEW or SKIPPED: they are internal codes. '
+            'Use the titles as written in the JSON.\n'
             '- Write amounts with thousands separators and "DH": 12,300.00 DH in English, 12 300,00 DH in French.\n'
             'Output exactly this format:\n### MEMO\n<short audit memo>\n### EMAIL\nSubject: <subject>\n'
-            '<polite email to the contractor asking for justification of each REVIEW item>\n\n'
-            f'Findings JSON:\n{findings_json(findings, project, number)}')
+            '<polite email to the contractor asking for justification of each REVIEW finding>\n\n'
+            f'Findings JSON:\n{findings_json(findings, project, number, language)}')
 
 
 def parse_sections(text):
@@ -158,6 +200,7 @@ def write_texts(findings, language, policy, api_key, ask=llm.ask_text, *, projec
         if reply is None:
             return fallback
         parts = parse_sections(reply)
-        if parts and not unsupported_numbers(' '.join(parts), allowed, policy.tolerance):
+        text = ' '.join(parts or ())
+        if parts and not unsupported_numbers(text, allowed, policy.tolerance) and not SEVERITY_WORDS.search(text):
             return Texts(*parts, True)
     return fallback
