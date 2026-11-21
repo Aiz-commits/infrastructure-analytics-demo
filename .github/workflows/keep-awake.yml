@@ -1,0 +1,61 @@
+name: Keep live app awake
+# Streamlit Community Cloud puts apps to sleep after a quiet period. This opens the public app every 6 hours,
+# clicks the wake-up button if the sleep page shows, and fails (GitHub emails the owner) if the app never loads.
+# Set the repository variable APP_URL (Settings > Secrets and variables > Actions > Variables).
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  wake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Skip when APP_URL is not set
+        if: vars.APP_URL == ''
+        run: echo "::notice::Set the APP_URL repository variable to enable the keep-awake check."
+      - uses: actions/setup-python@v5
+        if: vars.APP_URL != ''
+        with:
+          python-version: '3.12'
+      - name: Install headless browser
+        if: vars.APP_URL != ''
+        run: |
+          python -m pip install playwright==1.64.1
+          python -m playwright install --with-deps chromium
+      - name: Open the app and wake it if needed
+        if: vars.APP_URL != ''
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          python - <<'EOF'
+          import os, sys, time
+          from playwright.sync_api import sync_playwright
+
+          url = os.environ['APP_URL']
+          with sync_playwright() as p:
+              browser = p.chromium.launch()
+              page = browser.new_page()
+              page.goto(url, wait_until='domcontentloaded', timeout=120_000)
+              deadline, clicked = time.time() + 180, False
+              while time.time() < deadline:
+                  for frame in page.frames:
+                      try:
+                          button = frame.get_by_role('button', name='get this app back up')
+                          if not clicked and button.count():
+                              button.first.click()
+                              clicked = True
+                              print('Clicked the wake-up button.')
+                          if frame.get_by_text('Infrastructure Analytics Demo').count():
+                              print('App is up.')
+                              browser.close()
+                              sys.exit(0)
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(5_000)
+              print('App did not load within 180 seconds.')
+              browser.close()
+              sys.exit(1)
+          EOF
