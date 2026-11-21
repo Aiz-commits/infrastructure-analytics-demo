@@ -36,6 +36,16 @@ def test_normalize_url():
     assert normalize_url('sqlite:///x.db') == 'sqlite:///x.db'
     with pytest.raises(ValueError):
         normalize_url('mysql://u:p@h/db')
+    snippet = "psql 'postgresql://u:p@h/db?sslmode=require&channel_binding=require'"
+    assert normalize_url(snippet) == 'postgresql+psycopg://u:p@h/db?sslmode=require&channel_binding=require'
+
+
+def test_format_utc_converts_other_timezones():
+    from datetime import timezone as tz
+    casablanca = timezone(timedelta(hours=1))
+    assert history.format_utc(datetime(2026, 11, 22, 10, 30, tzinfo=casablanca)) == '2026-11-22 09:30'
+    assert history.format_utc(datetime(2026, 11, 22, 9, 30)) == '2026-11-22 09:30'  # naive = already UTC
+    assert history.format_utc(datetime(2026, 11, 22, 9, 30, tzinfo=tz.utc)) == '2026-11-22 09:30'
 
 
 def test_postgres_engine_works_with_neon_pooler():

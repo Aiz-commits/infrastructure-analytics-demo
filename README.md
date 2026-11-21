@@ -84,6 +84,7 @@ and drafts the audit memo and contractor email for human approval.
 - **Key:** `DATABASE_URL = "postgresql://..."` in `.streamlit/secrets.toml` (git-ignored) or
   Streamlit Cloud → Settings → Secrets. Tables are created on first use. Without it the section
   says "Public history not configured"; if the database is down the page keeps working.
+  After changing the secret on Streamlit Cloud, reboot the app so the new connection is used.
 - **Uptime:** Neon wakes on the next query by itself. Streamlit Community Cloud sleeps quiet apps,
   so `.github/workflows/keep-awake.yml` opens the app every 6 hours. Set the repository variable
   `APP_URL` (Settings → Secrets and variables → Actions → Variables). GitHub pauses scheduled

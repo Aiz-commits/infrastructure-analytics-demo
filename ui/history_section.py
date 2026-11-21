@@ -2,7 +2,7 @@
 import time
 import pandas as pd
 import streamlit as st
-from scripts.history import RunRecord, ensure_schema, get_engine, latest_runs, save_run, totals
+from scripts.history import RunRecord, ensure_schema, format_utc, get_engine, latest_runs, save_run, totals
 
 SESSION_SAVE_LIMIT = 5
 RETRY_AFTER_SECONDS = 60
@@ -107,7 +107,7 @@ def render_public_history():
     d.metric('Problems flagged', counts['problems'])
     if latest:
         st.dataframe(pd.DataFrame([{
-            'Date/time (UTC)': f"{row['decided_at']:%Y-%m-%d %H:%M}", 'File': row['file_name'],
+            'Date/time (UTC)': format_utc(row['decided_at']), 'File': row['file_name'],
             'Decision': row['decision'], 'AI text': 'yes' if row['ai_used_text'] else 'no',
             'Problems': row['review_count']} for row in latest]), hide_index=True, width='stretch')
     st.caption('Only Approve/Reject decisions on the bundled synthetic examples are saved. '

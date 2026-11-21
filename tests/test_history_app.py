@@ -102,6 +102,20 @@ def test_edited_values_not_saved(db_url):
     assert rows(db_url) == []
 
 
+def test_unedited_ai_read_example_is_saved(db_url):
+    def fake_generate(prompt, api_key, config, client_factory):
+        return json.dumps(CELLS) if 'locate values' in prompt else None
+    with patch('scripts.llm._generate', side_effect=fake_generate):
+        app = click(open_page(db_url, gemini='test-key'), 'ctrl_example_new')
+        app = click(app, 'ctrl_confirm')
+        app = click(app, 'ctrl_approve')
+    assert not app.exception
+    saved = rows(db_url)
+    assert len(saved) == 1
+    assert saved[0]['read_method'] == 'found by AI'
+    assert saved[0]['file_name'] == 'DEMO_DP_N5_NEW_LAYOUT.xlsx'
+
+
 def test_db_failure_keeps_page_working():
     bad = 'postgresql://user:secret@127.0.0.1:1/none'
     app = click(click(open_page(bad), 'ctrl_example'), 'ctrl_approve')

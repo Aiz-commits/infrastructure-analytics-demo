@@ -72,8 +72,16 @@ class RunRecord:
     email_body: str
 
 
+def format_utc(moment):
+    """Display a stored timestamp in UTC whatever the database session time zone is."""
+    return f'{_utc(moment):%Y-%m-%d %H:%M}'
+
+
 def normalize_url(url):
     url = (url or '').strip()
+    if url.startswith('psql '):  # Neon's dialog also offers a "psql '...'" snippet.
+        url = url[5:].strip()
+    url = url.strip('\'"')
     for prefix in ('postgresql://', 'postgres://'):
         if url.startswith(prefix):
             return 'postgresql+psycopg://' + url[len(prefix):]

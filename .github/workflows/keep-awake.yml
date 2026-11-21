@@ -39,7 +39,7 @@ jobs:
               browser = p.chromium.launch()
               page = browser.new_page()
               page.goto(url, wait_until='domcontentloaded', timeout=120_000)
-              deadline, clicked = time.time() + 180, False
+              deadline, clicked = time.time() + 300, False
               while time.time() < deadline:
                   for frame in page.frames:
                       try:
@@ -55,7 +55,7 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(5_000)
-              print('App did not load within 180 seconds.')
+              print('App did not load within 300 seconds.')
               browser.close()
               sys.exit(1)
           EOF
