@@ -1,19 +1,28 @@
 """Public synthetic demo. Uploaded workbooks stay in the current session's memory."""
+import hashlib
+from datetime import datetime, timezone
 from io import BytesIO
 from decimal import Decimal
 import altair as alt
 import pandas as pd
 import streamlit as st
+from scripts.ai_reader import MAX_UPLOAD_BYTES, read_with_ai
+from scripts.ai_writer import Texts, findings_json, write_texts
 from scripts.audit import all_passed, audit_batch, display_frame
+from scripts.controller_checks import (EXAMPLES_DIR, FIELDS, LABELS, SOURCE_AI, apply_edits, from_extractor,
+                                       previous_from_history, review_count, run_checks)
+from scripts.controller_review import email_eml, memo_markdown, trail_row
 from scripts.decompte_extractor import extract_decompte
-from scripts.policy import load_policy
+from scripts.policy import amount, load_policy
 from scripts.reports import REPORT_NAMES, verified_report
 from scripts.workbooks import MAX_FILES, preview_workbook, workbook_bytes
 
+CONTROLLER_PAGE = '🤖 AI Controller'
 st.set_page_config(page_title='Construction Project Monitoring', page_icon='🏗️', layout='wide')
 st.sidebar.title('🏗️ Infrastructure Analytics Demo')
 st.sidebar.caption('Construction Monitoring System')
-page = st.sidebar.radio('Go to', ['Overview', 'Financial Audit', 'Technical Monitoring', 'Document Analysis', 'Report Center'])
+page = st.sidebar.radio('Go to', ['Overview', 'Financial Audit', 'Technical Monitoring', 'Document Analysis', 'Report Center',
+                                  CONTROLLER_PAGE])
 st.sidebar.info('Synthetic demonstration. Uploads do not update the saved demo reports.')
 st.title('🏗️ Infrastructure Analytics Demo | Project Monitoring')
 st.info('DEMO VERSION — All bundled data are synthetic. Use synthetic documents only in this public demo.')
@@ -117,7 +126,241 @@ def saved_page():
                 st.warning(f'{label}: {error}')
 
 
-if page != 'Document Analysis':
+AI_CALL_LIMIT = 10
+PRIVACY_TEXT = ('This file contains no confidential data. It will be sent to Google Gemini (free tier), '
+                'which may use it to improve its products.')
+ICONS = {'OK': '✅ OK', 'WARNING': '⚠️ WARNING', 'REVIEW': '⚠️ REVIEW', 'SKIPPED': '⏭️ SKIPPED'}
+
+
+class NotCached(Exception):
+    """Raised inside cached functions so a failed AI result is never cached."""
+
+
+def gemini_key():
+    try:
+        return st.secrets.get('GEMINI_API_KEY') or None
+    except Exception:  # No secrets file locally or in CI: template mode.
+        return None
+
+
+def ai_call_allowed(cache_key):
+    """Max AI_CALL_LIMIT distinct AI requests per browser session; repeats of the same request are free."""
+    seen = st.session_state.setdefault('ctrl_ai_seen', set())
+    if cache_key in seen:
+        return True
+    if st.session_state.get('ctrl_ai_calls', 0) >= AI_CALL_LIMIT:
+        return False
+    seen.add(cache_key)
+    st.session_state['ctrl_ai_calls'] = st.session_state.get('ctrl_ai_calls', 0) + 1
+    return True
+
+
+@st.cache_data(show_spinner=False, max_entries=100)
+def cached_ai_read(digest, _data, _key):
+    statement = read_with_ai(_data, _key)
+    if statement is None:
+        raise NotCached()
+    return statement
+
+
+@st.cache_data(show_spinner=False, max_entries=200)
+def cached_texts(digest, language, payload, _findings, _key, project, number):
+    texts = write_texts(_findings, language, policy, _key, project=project, number=number)
+    if not texts.ai_used:
+        raise NotCached()
+    return texts
+
+
+def set_source(name, data, example):
+    st.session_state['ctrl_source'] = {'name': name, 'data': data, 'example': example,
+                                       'digest': hashlib.sha256(data).hexdigest()}
+
+
+def read_values(source, key, allow_ai):
+    data = source['data']
+    workbook_bytes(data)
+    try:
+        return from_extractor(extract_decompte(data, policy=policy)), None
+    except ValueError:
+        pass
+    if not allow_ai:
+        return None, 'Layout not supported by the fixed reader. Tick the privacy box above to allow AI reading.'
+    if not key:
+        return None, 'Layout not supported by the fixed reader, and AI is offline (template mode). Use a standard-layout décompte.'
+    if not ai_call_allowed((source['digest'], 'read')):
+        return None, f'AI limit reached for this session ({AI_CALL_LIMIT} calls). Use a standard-layout décompte.'
+    try:
+        with st.spinner('Gemini is locating the values…'):
+            return cached_ai_read(source['digest'], data, key), None
+    except NotCached:
+        return None, 'AI reading is unavailable right now (quota or network). Try again later.'
+
+
+def values_frame(statement):
+    return pd.DataFrame([{'Field': LABELS[f], 'Value DH': None if v.value is None else float(v.value),
+                          'Cell': v.cell or 'not found', 'Source': v.source, 'Uncertain': 'yes' if v.uncertain else ''}
+                         for f, v in ((f, statement.values[f]) for f in FIELDS)])
+
+
+def confirm_values(statement, digest):
+    confirmed = st.session_state.setdefault('ctrl_confirmed', {})
+    if digest in confirmed:
+        return confirmed[digest]
+    st.warning('Some values were found by AI. Check them, correct them if needed, then click Confirm. '
+               'No check runs before you confirm.')
+    st.caption('Values marked "found by AI" were located by Gemini; Python read each one from its cell. '
+               'Uncertain = the row or column label does not match.')
+    edited = st.data_editor(values_frame(statement), disabled=['Field', 'Cell', 'Source', 'Uncertain'],
+                            hide_index=True, width='stretch', key=f'ctrl_editor_{digest[:12]}')
+    a, b = st.columns(2)
+    project = a.text_input('Project', value=statement.project, key=f'ctrl_project_{digest[:12]}')
+    number = b.number_input('Statement number', min_value=0, max_value=10000, step=1,
+                            value=statement.number or 0, key=f'ctrl_number_{digest[:12]}')
+    if not st.button('Confirm values', key='ctrl_confirm', type='primary'):
+        return None
+    edits = {f: None if pd.isna(x) else amount(x) for f, x in zip(FIELDS, edited['Value DH'])}
+    confirmed[digest] = apply_edits(statement, edits, project=project.strip(), number=int(number) or None)
+    return confirmed[digest]
+
+
+def previous_values(source, previous_upload):
+    if source['example']:
+        return previous_from_history(st.session_state['ctrl_statement'])
+    if previous_upload is None:
+        return None
+    try:
+        return from_extractor(extract_decompte(workbook_bytes(previous_upload), policy=policy))
+    except ValueError as error:
+        st.warning(f'Previous décompte not used: {error}')
+        return None
+
+
+def findings_frame(findings):
+    return pd.DataFrame([{'Check': f.title, 'Status': ICONS[f.severity],
+                          'Difference DH': '' if f.difference is None else f'{f.difference:,.2f}',
+                          'Evidence': f.evidence} for f in findings])
+
+
+def review_texts(texts, source, statement, tag):
+    memo = st.text_area('📝 Audit memo', texts.memo, height=280, key=f'ctrl_memo_{tag}')
+    subject = st.text_input('✉️ Email subject', texts.email_subject, key=f'ctrl_subject_{tag}')
+    body = st.text_area('✉️ Email to contractor', texts.email_body, height=280, key=f'ctrl_body_{tag}')
+    a, b = st.columns(2)
+    clicked = 'Approved' if a.button('✅ Approve', key='ctrl_approve') else None
+    clicked = 'Rejected' if b.button('❌ Reject', key='ctrl_reject') else clicked
+    decisions = st.session_state.setdefault('ctrl_decisions', {})
+    if clicked:
+        now = datetime.now(timezone.utc)
+        decisions[tag] = (clicked, Texts(memo, subject, body, texts.ai_used), now)
+        st.session_state.setdefault('ctrl_trail', []).append(trail_row(source['name'], now, texts.ai_used, clicked))
+    if tag not in decisions:
+        return None
+    decision, final, now = decisions[tag]
+    if decision == 'Rejected':
+        st.info(f'Rejected by reviewer — {now:%Y-%m-%d %H:%M UTC}. Nothing was sent.')
+        return decision
+    st.success(f'Approved by reviewer — {now:%Y-%m-%d %H:%M UTC}. Nothing was emailed; download the files below.')
+    stem = f'D{statement.number}' if statement.number else 'decompte'
+    c, d = st.columns(2)
+    c.download_button('⬇ memo.md', memo_markdown(final, statement.project, statement.number, decision, now),
+                      file_name=f'audit_memo_{stem}.md', mime='text/markdown', key='ctrl_dl_memo')
+    d.download_button('⬇ email.eml', email_eml(final, now), file_name=f'email_{stem}.eml',
+                      mime='message/rfc822', key='ctrl_dl_eml')
+    return decision
+
+
+def controller_page():
+    st.header(CONTROLLER_PAGE)
+    st.caption('A digital junior auditor. Python does every calculation; the AI only locates cells and drafts text. '
+               'A human approves. Nothing is emailed.')
+    key = gemini_key()
+    language = 'fr' if st.selectbox('Language', ['Français', 'English'], key='ctrl_lang') == 'Français' else 'en'
+    if not key:
+        st.info('AI offline — template mode')
+    progress = st.empty()
+    steps = {'Receive': '⏳', 'Read': '⏳', 'Check': '⏳', 'Explain': '⏳', 'Review': '⏳'}
+    show = lambda: progress.markdown('  '.join(f'**Step {i} {name}** {mark}' for i, (name, mark) in
+                                               enumerate(steps.items(), start=1)))
+    a, b = st.columns(2)
+    if a.button('▶ Try example: DEMO_DP_N5', key='ctrl_example'):
+        set_source('DEMO_DP_N5.xlsx', (EXAMPLES_DIR / 'DEMO_DP_N5.xlsx').read_bytes(), True)
+    if b.button('▶ Try example: new layout (AI reading)', key='ctrl_example_new'):
+        set_source('DEMO_DP_N5_NEW_LAYOUT.xlsx', (EXAMPLES_DIR / 'DEMO_DP_N5_NEW_LAYOUT.xlsx').read_bytes(), True)
+    uploaded = st.file_uploader('Or upload your own synthetic .xlsx décompte (max 2 MB, first sheet)',
+                                type=['xlsx'], key='ctrl_upload')
+    privacy = st.checkbox(PRIVACY_TEXT, key='ctrl_privacy')
+    previous_upload = st.file_uploader('Optional: the previous décompte, for continuity and sequence checks',
+                                       type=['xlsx'], key='ctrl_prev_upload')
+    if uploaded is not None:
+        data = uploaded.getvalue()
+        digest = hashlib.sha256(data).hexdigest()
+        if len(data) > MAX_UPLOAD_BYTES:
+            st.error('This file is larger than 2 MB. The AI Controller accepts files up to 2 MB.')
+            show()
+            return
+        if st.session_state.get('ctrl_upload_digest') != digest:
+            st.session_state['ctrl_upload_digest'] = digest
+            set_source(uploaded.name, data, False)
+    source = st.session_state.get('ctrl_source')
+    if source is None:
+        show()
+        return
+    steps['Receive'] = '✅'
+    allow_ai = bool(source['example'] or privacy)
+    st.caption(f"File: {source['name']}" + ('' if allow_ai else ' • AI disabled until you tick the privacy box'))
+    try:
+        statement, problem = read_values(source, key, allow_ai)
+    except ValueError as error:
+        statement, problem = None, str(error)
+    if statement is None:
+        steps['Read'] = '⚠️'
+        show()
+        st.warning(problem)
+        return
+    if any(v.source == SOURCE_AI for v in statement.values.values()):
+        statement = confirm_values(statement, source['digest'])
+        if statement is None:
+            show()
+            return
+    steps['Read'] = '✅'
+    st.session_state['ctrl_statement'] = statement
+    st.subheader('Values read')
+    st.dataframe(values_frame(statement), hide_index=True, width='stretch')
+    findings = run_checks(statement, previous_values(source, previous_upload), policy)
+    steps['Check'] = '⚠️' if review_count(findings) else '✅'
+    st.subheader('Checks')
+    st.dataframe(findings_frame(findings), hide_index=True, width='stretch')
+    texts, cache_key = None, (source['digest'], language)
+    if key and allow_ai:
+        if ai_call_allowed(cache_key):
+            payload = findings_json(findings, statement.project, statement.number)
+            try:
+                with st.spinner('Gemini is drafting the memo and email…'):
+                    texts = cached_texts(source['digest'], language, payload, findings, key,
+                                         statement.project, statement.number)
+            except NotCached:
+                st.caption('AI text unavailable or failed the number check; template text shown.')
+        else:
+            st.caption(f'AI limit reached for this session ({AI_CALL_LIMIT} calls); template text shown.')
+    if texts is None:
+        texts = write_texts(findings, language, policy, None, project=statement.project, number=statement.number)
+    steps['Explain'] = '✅'
+    st.caption('Drafted by AI (number-checked)' if texts.ai_used else 'Template text (no AI)')
+    decision = review_texts(texts, source, statement, f'{source["digest"][:12]}_{language}')
+    steps['Review'] = {'Approved': '✅', 'Rejected': '❌'}.get(decision, '⏳')
+    show()
+    trail = st.session_state.get('ctrl_trail', [])
+    if trail:
+        st.subheader('Audit trail (this session)')
+        st.dataframe(pd.DataFrame(trail), hide_index=True, width='stretch')
+
+
+if page == CONTROLLER_PAGE:
+    try:
+        controller_page()
+    except Exception:
+        st.error('Cannot analyze this workbook. Check its format, or try a standard-layout décompte.')
+elif page != 'Document Analysis':
     try:
         saved_page()
     except (ValueError, KeyError, OSError, IndexError) as error:

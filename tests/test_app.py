@@ -18,7 +18,8 @@ def upload(name, data):
     return UploadedFile(UploadedFileRec(name, name, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data), None)
 
 
-@pytest.mark.parametrize('page', ['Overview', 'Financial Audit', 'Technical Monitoring', 'Document Analysis', 'Report Center'])
+@pytest.mark.parametrize('page', ['Overview', 'Financial Audit', 'Technical Monitoring', 'Document Analysis', 'Report Center',
+                                  '🤖 AI Controller'])
 def test_pages_load(page):
     app = run_page(page)
     assert not app.exception
