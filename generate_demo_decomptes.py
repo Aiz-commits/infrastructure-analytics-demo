@@ -5,6 +5,8 @@ from pathlib import Path
 from openpyxl import Workbook
 from scripts.policy import amount, expected_amounts, load_policy
 
+MONTHLY_WORKS = [480000, 640000, 810000, 820000]
+
 
 def generate_demo_decomptes(folder, policy=None):
     policy = policy or load_policy()
@@ -12,7 +14,7 @@ def generate_demo_decomptes(folder, policy=None):
     folder.mkdir(parents=True, exist_ok=True)
     cumulative = Decimal('0.00')
     paths = []
-    for number, monthly in enumerate([480000, 640000, 810000, 820000], start=1):
+    for number, monthly in enumerate(MONTHLY_WORKS, start=1):
         works, previous = amount(monthly), cumulative
         cumulative = amount(cumulative + works)
         expected = expected_amounts(works, cumulative, previous, policy)
@@ -35,9 +37,69 @@ def generate_demo_decomptes(folder, policy=None):
     return paths
 
 
+NEW_LAYOUT_ROWS = [('works', 'Travaux du mois HT'), ('previous', 'Cumul précédent HT'),
+                   ('cumulative', 'Cumul actuel HT'), ('retention', 'Retenue de garantie 10%'),
+                   ('net', 'Net HT'), ('vat', 'TVA 20%'), ('ttc', 'Total TTC')]
+
+
+def controller_example_values(policy):
+    """D5 with exactly two planted problems: a 12,300 DH continuity gap and +1,000 DH VAT."""
+    d4_cumulative = amount(sum(MONTHLY_WORKS))
+    works = amount(900000)
+    previous = amount(d4_cumulative - Decimal('12300.00'))
+    cumulative = amount(previous + works)
+    expected = expected_amounts(works, cumulative, previous, policy)
+    vat = amount(expected['VAT'] + Decimal('1000.00'))
+    return {'works': works, 'previous': previous, 'cumulative': cumulative,
+            'retention': expected['Retention'], 'net': expected['Net HT'], 'vat': vat,
+            'ttc': amount(expected['Net HT'] + vat)}
+
+
+def _identity_sheet(workbook, title):
+    sheet = workbook.active
+    sheet.title = title
+    sheet['A1'] = 'DEMO PROJECT — DECOMPTE D5'
+    sheet['A2'] = 'SYNTHETIC DATA — FOR DEMONSTRATION ONLY'
+    sheet['A3'], sheet['B3'] = 'Project ID', 'DEMO PROJECT'
+    sheet['A4'], sheet['B4'] = 'Statement number', 5
+    return sheet
+
+
+def generate_controller_examples(folder, policy=None):
+    values = controller_example_values(policy or load_policy())
+    folder = Path(folder)
+    folder.mkdir(parents=True, exist_ok=True)
+    paths = []
+    workbook = Workbook()
+    sheet = _identity_sheet(workbook, 'DP')
+    sheet['A39'] = 'Retenue de Garantie'
+    for cell, field in {'B37': 'cumulative', 'C37': 'previous', 'D37': 'works', 'D39': 'retention',
+                        'D44': 'net', 'D45': 'vat', 'D46': 'ttc'}.items():
+        sheet[cell] = float(values[field])
+    paths.append(folder / 'DEMO_DP_N5.xlsx')
+    workbook.save(paths[-1])
+    workbook.close()
+    workbook = Workbook()
+    sheet = _identity_sheet(workbook, 'Situation')
+    sheet['F8'], sheet['H8'] = 'Désignation', 'Montant (DH)'
+    for row, (field, label) in enumerate(NEW_LAYOUT_ROWS, start=10):
+        sheet[f'F{row}'], sheet[f'H{row}'] = label, float(values[field])
+    paths.append(folder / 'DEMO_DP_N5_NEW_LAYOUT.xlsx')
+    workbook.save(paths[-1])
+    workbook.close()
+    return paths
+
+
 if __name__ == '__main__':
+    root = Path(__file__).resolve().parent
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output-dir', type=Path, default=Path(__file__).resolve().parent / 'demo_decomptes')
+    parser.add_argument('--output-dir', type=Path, default=root / 'demo_decomptes')
+    parser.add_argument('--controller-dir', type=Path, nargs='?', const=root / 'controller_examples', default=None,
+                        help='Write only the AI Controller examples (never into demo_decomptes).')
     args = parser.parse_args()
-    for path in generate_demo_decomptes(args.output_dir):
+    if args.controller_dir is not None:
+        created = generate_controller_examples(args.controller_dir)
+    else:
+        created = generate_demo_decomptes(args.output_dir)
+    for path in created:
         print(f'Created synthetic statement: {path.name}')
