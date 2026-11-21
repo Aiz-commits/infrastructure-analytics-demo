@@ -38,6 +38,14 @@ def test_normalize_url():
         normalize_url('mysql://u:p@h/db')
 
 
+def test_postgres_engine_works_with_neon_pooler():
+    """Neon's pooled endpoint rejects startup 'options'; the timeout is set per transaction instead."""
+    from sqlalchemy import event
+    pg = get_engine('postgresql://u:p@host.neon.tech/db?sslmode=require')
+    assert 'options' not in pg.dialect.create_connect_args(pg.url)[1]
+    assert event.contains(pg, 'begin', history._statement_timeout)
+
+
 def test_schema_idempotent(engine):
     ensure_schema(engine)
     with engine.connect() as conn:

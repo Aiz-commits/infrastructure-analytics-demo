@@ -2,7 +2,7 @@
 from dataclasses import astuple, dataclass, fields
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, Identity, Integer, MetaData, Numeric, String, Table,
-                        Text, and_, create_engine, func, insert, select, text)
+                        Text, and_, create_engine, event, func, insert, select, text)
 
 MAX_TEXT = 5000
 DAILY_CAP = 200
@@ -82,11 +82,19 @@ def normalize_url(url):
     raise ValueError('DATABASE_URL must be a postgresql:// or sqlite:/// URL.')
 
 
+def _statement_timeout(conn):
+    """5 s limit per transaction. SET LOCAL works through Neon's pooled (PgBouncer) endpoint,
+    which rejects the startup 'options' parameter."""
+    conn.exec_driver_sql('SET LOCAL statement_timeout = 5000')
+
+
 def get_engine(url):
     url = normalize_url(url)
     if url.startswith('postgresql'):
-        return create_engine(url, pool_pre_ping=True, pool_size=2, max_overflow=2,
-                             connect_args={'connect_timeout': 5, 'options': '-c statement_timeout=5000'})
+        engine = create_engine(url, pool_pre_ping=True, pool_size=2, max_overflow=2,
+                               connect_args={'connect_timeout': 5})
+        event.listen(engine, 'begin', _statement_timeout)
+        return engine
     return create_engine(url)
 
 
