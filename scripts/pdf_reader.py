@@ -24,6 +24,7 @@ class Token:
     x0: float
     x1: float
     y: float
+    text: str = ''  # the amount exactly as printed
 
 
 @dataclass(frozen=True)
@@ -62,7 +63,8 @@ def extract_tokens(data):
             for match in AMOUNT_PATTERN.finditer(text):
                 value = parse_amount_text(match.group())
                 if value is not None:
-                    tokens.append(Token(f'T{len(tokens) + 1}', value, line.page, line.text, x0, x1, line.y))
+                    tokens.append(Token(f'T{len(tokens) + 1}', value, line.page, line.text, x0, x1, line.y,
+                                        match.group()))
     return tokens, lines
 
 
@@ -71,17 +73,33 @@ def _row_position(token, tokens):
     return row.index(token), len(row)
 
 
+def _lines_above(token, lines):
+    return sorted((line for line in lines if line.page == token.page and line.y > token.y), key=lambda line: line.y)
+
+
+def _all_amounts(line):
+    return all(parse_amount_text(text) is not None for text, _, _ in line.chunks)
+
+
+def column_header(token, tokens, lines):
+    """Table row (every piece on the line is an amount, 2+ of them): the k-th label of the nearest text-only
+    line above with the same number of pieces. Any other line has no column header."""
+    index, count = _row_position(token, tokens)
+    row = next((line for line in lines if line.page == token.page and line.y == token.y), None)
+    if count < 2 or row is None or len(row.chunks) != count or not _all_amounts(row):
+        return None
+    header = next((line for line in _lines_above(token, lines) if len(line.chunks) == count
+                   and not any(parse_amount_text(text) is not None for text, _, _ in line.chunks)), None)
+    return header.chunks[index][0] if header is not None else None
+
+
 def _header_ok(field, token, tokens, lines):
     if label_matches(field, token.line):
         return True
-    above = [line for line in lines if line.page == token.page and line.y > token.y]
-    above.sort(key=lambda line: line.y)
-    index, count = _row_position(token, tokens)
-    if count > 1:
-        header = next((line for line in above if len(line.chunks) == count), None)
-        if header is not None:
-            return label_matches(field, header.chunks[index][0])
-    for line in above:
+    header = column_header(token, tokens, lines)
+    if header is not None:
+        return label_matches(field, header)
+    for line in _lines_above(token, lines):
         for text, x0, x1 in line.chunks:
             if x0 - OVERLAP_PT <= token.x1 and token.x0 <= x1 + OVERLAP_PT and label_matches(field, text):
                 return True
@@ -116,11 +134,19 @@ def _text(value):
     return value if isinstance(value, (str, int)) and not isinstance(value, bool) else None
 
 
-def build_prompt(tokens):
+def _listing(token, tokens, lines):
+    header = column_header(token, tokens, lines)
+    column = f' | column "{header}"' if header else ''
+    return f'{token.id} | p{token.page} | amount "{token.text}"{column} | line "{token.line[:120]}"'
+
+
+def build_prompt(tokens, lines):
     fields = '\n'.join(f'- {field}: {hint}' for field, hint in FIELD_HINTS.items())
-    listing = '\n'.join(f'{t.id} | p{t.page} | "{t.line[:120]}"' for t in tokens)
+    listing = '\n'.join(_listing(t, tokens, lines) for t in tokens)
     return ('You locate values in a construction payment statement (décompte) PDF.\n'
-            'Below, every amount printed in the PDF has an id, with its page and the full line it is on.\n'
+            'Below, every number printed in the PDF has an id, with its page, the number as printed, its table '
+            'column header when it sits in a table row, and the full line it is on. Small numbers such as rates '
+            '(20 in "TVA 20%") are listed too; pick the money amount, not the rate.\n'
             'For each field return the id of the amount that holds its value (for example "T7"), or null if you '
             'are not sure. Return ids only. Do not compute, add, or change any number. '
             'For project and number, return the project name and the statement number as printed, or null.\n'
@@ -128,10 +154,10 @@ def build_prompt(tokens):
 
 
 def read_pdf_with_ai(data, api_key, ask=llm.ask_json):
-    tokens, _ = extract_tokens(data)
+    tokens, lines = extract_tokens(data)
     if len(tokens) < MIN_TOKENS:
         raise ValueError('NO_TEXT')
-    answer = ask(build_prompt(tokens), SCHEMA, api_key)
+    answer = ask(build_prompt(tokens, lines), SCHEMA, api_key)
     if not isinstance(answer, dict):
         return None
     return trace_pdf(data, answer)

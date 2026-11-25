@@ -82,3 +82,13 @@ def test_ai_failure_returns_none(pdf):
 def test_unknown_project_not_in_text_is_dropped(pdf):
     statement = trace_pdf(pdf, {**answer_for(pdf), 'project': 'Invented Site'})
     assert statement.project == ''
+
+
+def test_prompt_shows_each_amount_and_its_column(pdf):
+    from scripts.pdf_reader import build_prompt
+    tokens, lines = extract_tokens(pdf)
+    prompt = build_prompt(tokens, lines)
+    previous = next(t for t in tokens if t.value == Decimal('2737700.00'))
+    vat = next(t for t in tokens if t.value == Decimal('163000.00'))
+    assert f'{previous.id} | p1 | amount "2 737 700,00" | column "Cumul précédent HT"' in prompt
+    assert f'{vat.id} | p1 | amount "163 000,00" | line "TVA 20% 163 000,00"' in prompt
