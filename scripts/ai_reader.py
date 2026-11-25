@@ -1,9 +1,9 @@
 """AI-assisted reading of unknown layouts. The AI names cells; Python reads every value itself."""
 import re
-import unicodedata
 from decimal import Decimal
 from . import llm
 from .controller_checks import FIELDS, SOURCE_AI, ReadValue, Statement
+from .doc_text import LABEL_KEYWORDS, label_matches  # noqa: F401  (LABEL_KEYWORDS re-exported)
 from .decompte_extractor import identity, statement_number
 from .policy import amount
 from .workbooks import MAX_COLUMNS, open_workbook
@@ -11,9 +11,6 @@ from .workbooks import MAX_COLUMNS, open_workbook
 MAX_UPLOAD_BYTES = 2 * 1024 * 1024
 MAX_AI_CELLS = 2000
 AI_FIELDS = FIELDS + ('project', 'number')
-LABEL_KEYWORDS = {'works': ('travaux', 'works'), 'previous': ('precedent', 'anterieur', 'previous'),
-                  'cumulative': ('cumul', 'cumulative'), 'retention': ('retenue', 'retention'),
-                  'net': ('net',), 'vat': ('tva', 'vat'), 'ttc': ('ttc',)}
 _ADDRESS = re.compile(r'^([A-Z]{1,3})([1-9][0-9]{0,4})$')
 SCHEMA = {'type': 'object', 'properties': {f: {'type': 'string', 'nullable': True} for f in AI_FIELDS}}
 FIELD_HINTS = {'works': 'works executed this month, excluding tax (HT)',
@@ -50,11 +47,6 @@ def cell_text(data):
     return '\n'.join(f'{address}: {value}' for address, value in cells.items())
 
 
-def _normalize(text):
-    text = unicodedata.normalize('NFKD', str(text))
-    return ''.join(ch for ch in text if not unicodedata.combining(ch)).casefold()
-
-
 def _split(address):
     match = _ADDRESS.match(address) if isinstance(address, str) else None
     return (match.group(1), int(match.group(2))) if match else None
@@ -64,14 +56,7 @@ def _label_ok(field, address, cells):
     column, row = _split(address)
     labels = [value for key, value in cells.items() if isinstance(value, str)
               and ((_split(key)[1] == row) or (_split(key)[0] == column and _split(key)[1] < row))]
-    for label in labels:
-        text = _normalize(label)
-        hit = any(re.search(rf'\b{word}', text) for word in LABEL_KEYWORDS[field])
-        if field == 'cumulative' and any(re.search(rf'\b{w}', text) for w in LABEL_KEYWORDS['previous']):
-            hit = False
-        if hit:
-            return True
-    return False
+    return any(label_matches(field, label) for label in labels)
 
 
 def _number_value(value):

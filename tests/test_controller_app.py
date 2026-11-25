@@ -109,3 +109,72 @@ def test_unexpected_error_shows_message():
     assert not app.exception
     assert any('Cannot analyze this workbook' in message.value for message in app.error)
     assert 'boom' not in all_text(app)
+
+
+PDF_BYTES = (ROOT / 'controller_examples' / 'DEMO_DP_N5.pdf').read_bytes()
+PHOTO_BYTES = (ROOT / 'controller_examples' / 'DEMO_DP_N5_PHOTO.jpg').read_bytes()
+PHOTO_ANSWER = (ROOT / 'controller_examples' / 'DEMO_DP_N5_PHOTO.jpg.answer.json').read_text(encoding='utf-8')
+BADGE = 'Saved example answer (AI offline)'
+
+
+def confirm_then_check(app):
+    assert not app.exception
+    assert app.button(key='ctrl_confirm') is not None
+    assert 'REVIEW' not in all_text(app)
+    app = click(app, 'ctrl_confirm')
+    assert not app.exception
+    text = all_text(app)
+    assert text.count('REVIEW') >= 2
+    assert '12,300.00' in text or '12 300,00' in text
+    return app
+
+
+def test_pdf_example_offline_uses_saved_answer():
+    app = click(open_page(), 'ctrl_example_pdf')
+    assert BADGE in all_text(app)
+    assert 'PDF text (AI located)' in all_text(app)
+    confirm_then_check(app)
+
+
+def test_photo_example_offline_uses_saved_answer():
+    app = click(open_page(), 'ctrl_example_photo')
+    text = all_text(app)
+    assert BADGE in text
+    assert 'These numbers were typed by the AI from the picture' in text
+    assert len(app.get('image')) >= 1
+    confirm_then_check(app)
+
+
+def test_photo_example_live():
+    def fake_generate(contents, api_key, config, client_factory):
+        return PHOTO_ANSWER if isinstance(contents, list) else None
+    with patch('scripts.llm._generate', side_effect=fake_generate):
+        app = click(open_page(secret='test-key'), 'ctrl_example_photo')
+        text = all_text(app)
+        assert BADGE not in text
+        assert 'read by AI from image' in text
+        confirm_then_check(app)
+
+
+def test_own_pdf_needs_privacy_tick():
+    app = open_page(single=upload('x.pdf', PDF_BYTES))
+    assert not app.exception
+    assert 'PDF and photo reading uses Gemini. Tick the privacy box above to allow it.' in all_text(app)
+
+
+def test_own_photo_offline_message():
+    photo = upload('x.jpg', PHOTO_BYTES)
+
+    def uploader(*args, **kwargs):
+        return photo if kwargs.get('key') == 'ctrl_upload' else None
+    app = open_page(single=photo)
+    with patch('streamlit.file_uploader', side_effect=uploader):
+        app = app.checkbox(key='ctrl_privacy').check().run(timeout=30)
+    assert not app.exception
+    assert 'AI is offline (template mode). PDF and photo reading needs AI; upload an .xlsx instead.' in all_text(app)
+
+
+def test_not_a_pdf_upload():
+    app = open_page(single=upload('x.pdf', b'hello'))
+    assert not app.exception
+    assert 'Unsupported file' in all_text(app)

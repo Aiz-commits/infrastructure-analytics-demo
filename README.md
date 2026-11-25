@@ -36,7 +36,7 @@ changing source statements, technical input, calculation code or project configu
   in saved demo reports. Choose the worksheet to use for both preview and single-file
   analysis. Multi-file analysis requires one unambiguous supported DP sheet per file.
 - **Report Center:** downloads saved synthetic reports with validated provenance.
-- **🤖 AI Controller:** reads one new statement, checks it, drafts an audit memo and
+- **🤖 AI Controller:** reads one new statement (Excel, PDF or photo), checks it, drafts an audit memo and
   contractor email, and waits for a human Approve/Reject (see below).
 
 Saved reports are deliberately separate from uploaded analysis. The app displays
@@ -63,14 +63,28 @@ and drafts the audit memo and contractor email for human approval.
   to download, and adds a row to the session audit trail.
 - **Privacy:** bundled examples use AI. Your own upload is sent to Google Gemini
   (free tier) only after you tick the consent box. Use synthetic files only.
-- **Limits:** `.xlsx` up to 2 MB, first sheet, max 2,000 non-empty cells sent to AI,
-  10 AI calls per browser session, results cached per file and language.
+- **PDFs and photos (Phase 2):** the controller now reads PDFs and phone photos too,
+  and tells you which numbers it read itself and which ones a human must confirm.
+  - *Digital PDF:* Python extracts the text and numbers every amount; Gemini only says
+    which numbered amount is which field. Values show as "PDF text (AI located)", each
+    traced to its page and line, with a label check against the line or column header.
+  - *Photo or scanned PDF:* Gemini transcribes the printed amounts and labels; Python
+    parses them. Values show as "read by AI from image", the picture is shown next to
+    them, and nothing is checked until you click **Confirm values**.
+  - *Examples:* **▶ Try example: PDF** and **▶ Try example: photo** call Gemini live. With
+    no key, after the session limit, or if the call fails, they use a saved example answer
+    (badge: "Saved example answer (AI offline)") that goes through the same Python checks.
+    Your own PDF or photo needs the consent box and a key.
+- **Limits:** `.xlsx` up to 2 MB, first sheet, max 2,000 non-empty cells sent to AI;
+  PDF up to 2 MB and 3 pages; JPEG/PNG up to 5 MB. 10 AI calls per browser session,
+  results cached per file and language.
 - **Key:** put `GEMINI_API_KEY = "..."` in `.streamlit/secrets.toml` (git-ignored) or in
   Streamlit Cloud → Settings → Secrets. No key = "AI offline — template mode".
 - **Examples:** `controller_examples/` (not `demo_decomptes/`, so saved reports do not
   change). Rebuild with `python generate_demo_decomptes.py --controller-dir`.
   `DEMO_DP_N5.xlsx` has two planted problems: a 12,300.00 DH continuity gap with D4,
-  and VAT 1,000.00 DH above 20% of net.
+  and VAT 1,000.00 DH above 20% of net. `DEMO_DP_N5.pdf` and `DEMO_DP_N5_PHOTO.jpg`
+  hold the same statement, each with a `.answer.json` saved example answer.
 
 ## Public history and uptime
 

@@ -45,3 +45,21 @@ def test_bad_or_non_object_json_returns_none():
 def test_text_is_stripped_and_empty_is_none():
     assert ask_text('p', 'k', client_factory=lambda key: fake_client(text='  memo \n')) == 'memo'
     assert ask_text('p', 'k', client_factory=lambda key: fake_client(text='   ')) is None
+
+
+def test_ask_json_file_sends_file_part():
+    from scripts.llm import ask_json_file
+    client = fake_client(text='{"vat": {"value": "1", "label": "TVA"}}')
+    answer = ask_json_file('read it', b'\x89PNG', 'image/png', {'type': 'object'}, 'k', client_factory=lambda key: client)
+    assert answer == {'vat': {'value': '1', 'label': 'TVA'}}
+    contents = client.calls[0]['contents']
+    assert contents[0].inline_data.mime_type == 'image/png'
+    assert contents[0].inline_data.data == b'\x89PNG'
+    assert contents[1] == 'read it'
+
+
+def test_ask_json_file_failure_returns_none():
+    from scripts.llm import ask_json_file
+    client = fake_client(error=RuntimeError('quota'))
+    assert ask_json_file('p', b'x', 'image/png', {}, 'k', client_factory=lambda key: client) is None
+    assert ask_json_file('p', b'x', 'image/png', {}, None) is None

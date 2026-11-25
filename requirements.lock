@@ -105,6 +105,8 @@ pydantic-core==2.50.5
     # via pydantic
 pydeck==0.9.3
     # via streamlit
+pypdf==7.1.1
+    # via -r requirements.txt
 python-dateutil==4.0.0
     # via pandas
 python-multipart==0.0.33

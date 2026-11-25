@@ -1,0 +1,32 @@
+{
+  "works": {
+    "value": "900 000,00",
+    "label": "Travaux du mois HT"
+  },
+  "previous": {
+    "value": "2 737 700,00",
+    "label": "Cumul précédent HT"
+  },
+  "cumulative": {
+    "value": "3 637 700,00",
+    "label": "Cumul actuel HT"
+  },
+  "retention": {
+    "value": "90 000,00",
+    "label": "Retenue de garantie 10%"
+  },
+  "net": {
+    "value": "810 000,00",
+    "label": "Net HT"
+  },
+  "vat": {
+    "value": "163 000,00",
+    "label": "TVA 20%"
+  },
+  "ttc": {
+    "value": "973 000,00",
+    "label": "Total TTC"
+  },
+  "project": "DEMO PROJECT",
+  "number": "5"
+}
