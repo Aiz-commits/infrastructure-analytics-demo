@@ -1,4 +1,5 @@
 """Digital PDF reading. Python extracts and numbers every amount; the AI only says which token is which field."""
+import re
 from dataclasses import dataclass
 from decimal import Decimal
 from io import BytesIO
@@ -10,7 +11,7 @@ from .doc_text import AMOUNT_PATTERN, clean_spaces, label_matches, normalize, no
 from .documents import MAX_PDF_PAGES
 
 MIN_TOKENS = 3          # fewer printed amounts than this = no usable text (a scan): switch to vision.
-OVERLAP_PT = 10         # fallback column match tolerance, in PDF points.
+OVERLAP_CHARS = 2       # fallback column match tolerance, in layout-text characters.
 SCHEMA = {'type': 'object', 'properties': {f: {'type': 'string', 'nullable': True}
                                            for f in FIELDS + ('project', 'number')}}
 
@@ -35,21 +36,18 @@ class Line:
     chunks: tuple  # ((text, x0, x1), ...) left to right
 
 
-def _page_lines(page, number):
-    chunks = []
+_CELL = re.compile(r'\S+(?: \S+)*')  # 2+ spaces end a cell, so table cells never merge into one number.
 
-    def visit(text, cm, tm, font_dict, font_size):
-        text = clean_spaces(text).strip()
-        if text:
-            x, y = tm[4] * cm[0] + cm[4], tm[5] * cm[3] + cm[5]
-            width = len(text) * (font_size or 10) * abs(tm[0] or 1) * 0.5
-            chunks.append((round(y, 1), x, x + width, text))
-    page.extract_text(visitor_text=visit)
-    rows = {}
-    for y, x0, x1, text in chunks:
-        rows.setdefault(y, []).append((text, x0, x1))
-    return [Line(number, y, ' '.join(c[0] for c in sorted(parts, key=lambda c: c[1])),
-                 tuple(sorted(parts, key=lambda c: c[1]))) for y, parts in sorted(rows.items(), reverse=True)]
+
+def _page_lines(page, number):
+    """Lines from pypdf's layout mode, which keeps the page's horizontal spacing. Positions are character
+    columns; y is minus the line index, so a line above has a larger y."""
+    text = clean_spaces(page.extract_text(extraction_mode='layout'))
+    lines = []
+    for index, raw in enumerate(row for row in text.splitlines() if row.strip()):
+        chunks = tuple((m.group(), float(m.start()), float(m.end())) for m in _CELL.finditer(raw))
+        lines.append(Line(number, float(-index), ' '.join(c[0] for c in chunks), chunks))
+    return lines
 
 
 def extract_tokens(data):
@@ -101,7 +99,7 @@ def _header_ok(field, token, tokens, lines):
         return label_matches(field, header)
     for line in _lines_above(token, lines):
         for text, x0, x1 in line.chunks:
-            if x0 - OVERLAP_PT <= token.x1 and token.x0 <= x1 + OVERLAP_PT and label_matches(field, text):
+            if x0 - OVERLAP_CHARS <= token.x1 and token.x0 <= x1 + OVERLAP_CHARS and label_matches(field, text):
                 return True
     return False
 

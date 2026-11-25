@@ -92,3 +92,13 @@ def test_prompt_shows_each_amount_and_its_column(pdf):
     vat = next(t for t in tokens if t.value == Decimal('163000.00'))
     assert f'{previous.id} | p1 | amount "2 737 700,00" | column "Cumul précédent HT"' in prompt
     assert f'{vat.id} | p1 | amount "163 000,00" | line "TVA 20% 163 000,00"' in prompt
+
+
+def test_one_bt_row_with_whole_numbers_is_split_into_cells():
+    from scripts.pdf_reader import column_header
+    from tests.pdf_fixtures import one_bt_row_pdf
+    tokens, lines = extract_tokens(one_bt_row_pdf())
+    values = [t.value for t in tokens if t.value >= 1000]
+    assert values == [Decimal('3637700.00'), Decimal('2737700.00'), Decimal('900000.00'), Decimal('163000.00')]
+    previous = next(t for t in tokens if t.value == Decimal('2737700.00'))
+    assert column_header(previous, tokens, lines) == 'Cumul precedent HT'
