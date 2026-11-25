@@ -125,3 +125,12 @@ def test_expected_totals_are_reconciled(generated):
 def test_cli_requires_an_action():
     with pytest.raises(SystemExit):
         portfolio.main([])
+
+
+def test_cli_load_creates_every_power_bi_view(tmp_path, monkeypatch):
+    url = f'sqlite:///{tmp_path / "cli.sqlite"}'
+    monkeypatch.setenv('DATABASE_URL', url)
+    portfolio.main(['--load'])
+    with get_engine(url).connect() as conn:
+        for view in ('v_controller_decisions', 'v_controller_findings', *portfolio.VIEW_COLUMNS):
+            conn.execute(text(f'SELECT * FROM {view}')).all()

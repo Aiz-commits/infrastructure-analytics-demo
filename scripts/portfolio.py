@@ -20,6 +20,7 @@ from pathlib import Path
 from sqlalchemy import (Column, Date, DateTime, ForeignKey, Integer, MetaData, Numeric, String, Table, Text,
                         delete, insert, text)
 from .controller_checks import FIELDS, SOURCE_FIXED, ReadValue, Statement, review_count, run_checks
+from . import history
 from .history import CHECK_GROUP_SQL, create_views, get_engine
 from .policy import ROOT, amount, expected_amounts, load_policy
 
@@ -326,6 +327,7 @@ def main(argv=None):
         if not url:
             parser.error('DATABASE_URL not set (environment or .streamlit/secrets.toml)')
         engine = get_engine(url)
+        history.ensure_schema(engine)  # Live-history views too, so every Power BI view exists after one command.
         count, found = load(engine)
         print(f'Loaded {count} synthetic statements and {found} findings.')
     if args.csv:
