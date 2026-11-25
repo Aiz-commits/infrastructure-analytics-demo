@@ -66,6 +66,9 @@ def test_approve_example_saves_one_row(db_url):
     assert saved[0]['decision'] == 'Approved' and saved[0]['file_name'] == 'DEMO_DP_N5.xlsx'
     assert saved[0]['read_method'] == 'fixed layout' and saved[0]['edited'] in (0, False)
     assert len(rows(db_url, 'controller_values')) == 7
+    assert saved[0]['opened_at'] is not None and str(saved[0]['opened_at']) <= str(saved[0]['decided_at'])
+    minutes = rows(db_url, 'v_controller_decisions')[0]['minutes_to_decision']
+    assert minutes is not None and 0 <= minutes < 5
 
 
 def test_reject_then_approve_saves_first_only(db_url):

@@ -2,7 +2,7 @@
 from dataclasses import astuple, dataclass, fields
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, Identity, Integer, MetaData, Numeric, String, Table,
-                        Text, and_, create_engine, event, func, insert, select, text)
+                        Text, and_, create_engine, event, func, insert, inspect, select, text)
 
 MAX_TEXT = 5000
 DAILY_CAP = 200
@@ -28,6 +28,7 @@ runs = Table(
     Column('memo', Text, nullable=False),
     Column('email_subject', Text, nullable=False),
     Column('email_body', Text, nullable=False),
+    Column('opened_at', DateTime(timezone=True)),  # Phase 2.5: checks first shown; NULL on older rows.
 )
 values_table = Table(
     'controller_values', metadata,
@@ -49,9 +50,35 @@ findings_table = Table(
     Column('difference', Numeric(14, 2)),
     Column('evidence', Text, nullable=False),
 )
-VIEW_SQL = ('{create} v_controller_decisions AS SELECT id, decided_at, decision, file_name, project, statement_number, '
-            'read_method, language, ai_used_text, edited, rule_version, review_count, warning_count '
-            'FROM controller_runs')
+# Shared by the live and portfolio findings views, so Power BI groups both the same way.
+CHECK_GROUP_SQL = ("CASE WHEN {col} LIKE 'missing:%' THEN 'missing value' "
+                   "WHEN {col} LIKE 'uncertain:%' THEN 'uncertain label' "
+                   "WHEN {col} IN ('continuity', 'sequence') THEN {col} ELSE 'arithmetic' END")
+MINUTES_SQL = {'postgresql': 'EXTRACT(EPOCH FROM (decided_at - opened_at)) / 60.0',
+               'sqlite': '(julianday(decided_at) - julianday(opened_at)) * 1440.0'}
+# Power BI view contract: new columns are only ever appended (Postgres CREATE OR REPLACE VIEW rule).
+VIEWS = {
+    'v_controller_decisions': (
+        'SELECT id, decided_at, decision, file_name, project, statement_number, read_method, language, '
+        'ai_used_text, edited, rule_version, review_count, warning_count, opened_at, '
+        'CASE WHEN opened_at IS NULL OR opened_at > decided_at THEN NULL ELSE {minutes} END AS minutes_to_decision '
+        'FROM controller_runs'),
+    'v_controller_findings': (
+        'SELECT f.run_id, r.decided_at, r.decision, r.file_name, r.language, f.check_id, '
+        + CHECK_GROUP_SQL.format(col='f.check_id') + ' AS check_group, '
+        'f.severity, f.title, f.stated, f.expected, f.difference '
+        'FROM controller_findings f JOIN controller_runs r ON r.id = f.run_id'),
+}
+
+
+def create_views(conn, views, **values):
+    """CREATE OR REPLACE on Postgres keeps Power BI grants; SQLite has no OR REPLACE, so drop and recreate."""
+    postgres = conn.dialect.name == 'postgresql'
+    for name, body in views.items():
+        if not postgres:
+            conn.execute(text(f'DROP VIEW IF EXISTS {name}'))
+        verb = 'CREATE OR REPLACE VIEW' if postgres else 'CREATE VIEW'
+        conn.execute(text(f'{verb} {name} AS {body.format(**values)}'))
 
 
 @dataclass(frozen=True)
@@ -70,6 +97,7 @@ class RunRecord:
     memo: str
     email_subject: str
     email_body: str
+    opened_at: datetime | None = None
 
 
 def format_utc(moment):
@@ -108,9 +136,12 @@ def get_engine(url):
 
 def ensure_schema(engine):
     metadata.create_all(engine)
-    create = 'CREATE OR REPLACE VIEW' if engine.dialect.name == 'postgresql' else 'CREATE VIEW IF NOT EXISTS'
     with engine.begin() as conn:
-        conn.execute(text(VIEW_SQL.format(create=create)))
+        if engine.dialect.name == 'postgresql':
+            conn.execute(text('ALTER TABLE controller_runs ADD COLUMN IF NOT EXISTS opened_at TIMESTAMP WITH TIME ZONE'))
+        elif 'opened_at' not in {c['name'] for c in inspect(conn).get_columns('controller_runs')}:
+            conn.execute(text('ALTER TABLE controller_runs ADD COLUMN opened_at TIMESTAMP'))
+        create_views(conn, VIEWS, minutes=MINUTES_SQL[engine.dialect.name])
 
 
 def _utc(moment):
@@ -138,7 +169,7 @@ def save_run(engine, record, statement, findings):
         if duplicate:
             return None
         row = dict(zip((f.name for f in fields(record)), astuple(record)))
-        row.update(decided_at=when, memo=_cap(record.memo), email_subject=_cap(record.email_subject),
+        row.update(decided_at=when, opened_at=record.opened_at and _utc(record.opened_at), memo=_cap(record.memo), email_subject=_cap(record.email_subject),
                    email_body=_cap(record.email_body), project=record.project[:120],
                    review_count=sum(f.severity == 'REVIEW' for f in findings),
                    warning_count=sum(f.severity == 'WARNING' for f in findings))

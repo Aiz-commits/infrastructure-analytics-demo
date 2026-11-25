@@ -1,0 +1,5 @@
+project,contractor,contract_ttc,start_date,billed_ttc,statements
+DEMO ROAD R1,Alpha Works (fictional),5400000.00,2025-09-01,4435790.00,9
+DEMO BRIDGE B2,Beta Build (fictional),3600000.00,2025-11-01,3106520.00,6
+DEMO WATER W3,Alpha Works (fictional),7200000.00,2025-10-01,5260760.00,10
+DEMO SCHOOL S4,Gamma Infra (fictional),2400000.00,2026-01-01,1609640.00,6

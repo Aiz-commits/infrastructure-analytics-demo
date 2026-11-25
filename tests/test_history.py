@@ -115,3 +115,58 @@ def test_latest_runs_newest_first_and_limited(engine, n5):
     assert rows[0]['decided_at'] > rows[1]['decided_at']
     assert set(rows[0]) == {'decided_at', 'file_name', 'decision', 'ai_used_text', 'review_count'}
     assert rows[0]['review_count'] == 2
+
+
+def test_opened_at_and_minutes_to_decision(engine, n5):
+    statement, findings = n5
+    run = record()
+    from dataclasses import replace
+    save_run(engine, replace(run, opened_at=T0 - timedelta(minutes=30)), statement, findings)
+    save_run(engine, record(T0 + timedelta(hours=1), language='en'), statement, findings)  # older row: no opened_at
+    with engine.connect() as conn:
+        minutes = conn.execute(text('SELECT language, minutes_to_decision FROM v_controller_decisions '
+                                    'ORDER BY language')).all()
+    assert minutes[0][0] == 'en' and minutes[0][1] is None
+    assert minutes[1][1] == pytest.approx(30, abs=0.01)
+
+
+def test_findings_view_groups_checks(engine, n5):
+    statement, findings = n5
+    save_run(engine, record(), statement, findings)
+    with engine.connect() as conn:
+        groups = dict(conn.execute(text('SELECT check_id, check_group FROM v_controller_findings')).all())
+    assert groups['continuity'] == 'continuity' and groups['vat'] == 'arithmetic'
+
+
+def test_power_bi_view_contract(engine):
+    expected = {
+        'v_controller_decisions': ('id', 'decided_at', 'decision', 'file_name', 'project', 'statement_number',
+                                   'read_method', 'language', 'ai_used_text', 'edited', 'rule_version',
+                                   'review_count', 'warning_count', 'opened_at', 'minutes_to_decision'),
+        'v_controller_findings': ('run_id', 'decided_at', 'decision', 'file_name', 'language', 'check_id',
+                                  'check_group', 'severity', 'title', 'stated', 'expected', 'difference'),
+    }
+    with engine.connect() as conn:
+        for view, columns in expected.items():
+            assert tuple(conn.execute(text(f'SELECT * FROM {view}')).keys()) == columns
+
+
+def test_old_database_gets_opened_at(tmp_path):
+    """A Phase 1.5 database (no opened_at, old view) is upgraded in place by ensure_schema."""
+    from sqlalchemy import create_engine
+    url = f'sqlite:///{tmp_path / "old.sqlite"}'
+    old = create_engine(url)
+    with old.begin() as conn:
+        conn.execute(text('CREATE TABLE controller_runs (id INTEGER PRIMARY KEY, decided_at TIMESTAMP NOT NULL, '
+                          'decision VARCHAR(16) NOT NULL, file_name VARCHAR(240) NOT NULL, file_sha256 VARCHAR(64) '
+                          'NOT NULL, project VARCHAR(120) NOT NULL, statement_number INTEGER, read_method VARCHAR(32) '
+                          'NOT NULL, language VARCHAR(2) NOT NULL, ai_used_text BOOLEAN NOT NULL, edited BOOLEAN NOT '
+                          'NULL, review_count INTEGER NOT NULL, warning_count INTEGER NOT NULL, rule_version '
+                          'VARCHAR(40) NOT NULL, memo TEXT NOT NULL, email_subject TEXT NOT NULL, email_body TEXT '
+                          'NOT NULL)'))
+        conn.execute(text('CREATE VIEW v_controller_decisions AS SELECT id, decision FROM controller_runs'))
+    engine = get_engine(url)
+    ensure_schema(engine)
+    ensure_schema(engine)
+    with engine.connect() as conn:
+        assert 'minutes_to_decision' in conn.execute(text('SELECT * FROM v_controller_decisions')).keys()

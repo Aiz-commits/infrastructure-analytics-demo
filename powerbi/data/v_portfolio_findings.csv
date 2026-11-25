@@ -1,0 +1,218 @@
+statement_id,project,contractor,statement_number,decision,check_id,check_group,severity,title,stated,expected,difference,evidence
+1,DEMO ROAD R1,Alpha Works (fictional),1,Approved,retention,arithmetic,OK,Retention 10% of works,46900.00,46900.00,0.00,"works of month HT D37, retention D39"
+1,DEMO ROAD R1,Alpha Works (fictional),1,Approved,net,arithmetic,OK,Net HT = works − retention,422100.00,422100.00,0.00,"works of month HT D37, retention D39, net HT D44"
+1,DEMO ROAD R1,Alpha Works (fictional),1,Approved,vat,arithmetic,OK,VAT 20% of net HT,84420.00,84420.00,0.00,"net HT D44, VAT D45"
+1,DEMO ROAD R1,Alpha Works (fictional),1,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,506520.00,506520.00,0.00,"net HT D44, VAT D45, total TTC D46"
+1,DEMO ROAD R1,Alpha Works (fictional),1,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,469000.00,469000.00,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+1,DEMO ROAD R1,Alpha Works (fictional),1,Approved,continuity,continuity,SKIPPED,Continuity with previous décompte,,,,skipped — no previous décompte
+1,DEMO ROAD R1,Alpha Works (fictional),1,Approved,sequence,sequence,SKIPPED,Statement sequence,,,,skipped — no previous décompte
+2,DEMO ROAD R1,Alpha Works (fictional),2,Approved,retention,arithmetic,OK,Retention 10% of works,33000.00,33000.00,0.00,"works of month HT D37, retention D39"
+2,DEMO ROAD R1,Alpha Works (fictional),2,Approved,net,arithmetic,OK,Net HT = works − retention,297000.00,297000.00,0.00,"works of month HT D37, retention D39, net HT D44"
+2,DEMO ROAD R1,Alpha Works (fictional),2,Approved,vat,arithmetic,OK,VAT 20% of net HT,59400.00,59400.00,0.00,"net HT D44, VAT D45"
+2,DEMO ROAD R1,Alpha Works (fictional),2,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,356400.00,356400.00,0.00,"net HT D44, VAT D45, total TTC D46"
+2,DEMO ROAD R1,Alpha Works (fictional),2,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,799000.00,799000.00,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+2,DEMO ROAD R1,Alpha Works (fictional),2,Approved,continuity,continuity,OK,Continuity D1 → D2,469000.00,469000.00,0.00,D1 cumulative HT B37; D2 previous cumulative HT C37
+2,DEMO ROAD R1,Alpha Works (fictional),2,Approved,sequence,sequence,OK,Statement sequence D1 → D2,,,,consecutive numbers
+3,DEMO ROAD R1,Alpha Works (fictional),3,Rejected,retention,arithmetic,OK,Retention 10% of works,37850.00,37850.00,0.00,"works of month HT D37, retention D39"
+3,DEMO ROAD R1,Alpha Works (fictional),3,Rejected,net,arithmetic,OK,Net HT = works − retention,340650.00,340650.00,0.00,"works of month HT D37, retention D39, net HT D44"
+3,DEMO ROAD R1,Alpha Works (fictional),3,Rejected,vat,arithmetic,REVIEW,VAT 20% of net HT,129380.00,68130.00,61250.00,"net HT D44, VAT D45"
+3,DEMO ROAD R1,Alpha Works (fictional),3,Rejected,ttc,arithmetic,OK,TTC = net HT + VAT,470030.00,470030.00,0.00,"net HT D44, VAT D45, total TTC D46"
+3,DEMO ROAD R1,Alpha Works (fictional),3,Rejected,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,1177500.00,1177500.00,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+3,DEMO ROAD R1,Alpha Works (fictional),3,Rejected,continuity,continuity,OK,Continuity D2 → D3,799000.00,799000.00,0.00,D2 cumulative HT B37; D3 previous cumulative HT C37
+3,DEMO ROAD R1,Alpha Works (fictional),3,Rejected,sequence,sequence,OK,Statement sequence D2 → D3,,,,consecutive numbers
+4,DEMO ROAD R1,Alpha Works (fictional),4,Approved,retention,arithmetic,OK,Retention 10% of works,55500.00,55500.00,0.00,"works of month HT D37, retention D39"
+4,DEMO ROAD R1,Alpha Works (fictional),4,Approved,net,arithmetic,OK,Net HT = works − retention,499500.00,499500.00,0.00,"works of month HT D37, retention D39, net HT D44"
+4,DEMO ROAD R1,Alpha Works (fictional),4,Approved,vat,arithmetic,OK,VAT 20% of net HT,99900.00,99900.00,0.00,"net HT D44, VAT D45"
+4,DEMO ROAD R1,Alpha Works (fictional),4,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,599400.00,599400.00,0.00,"net HT D44, VAT D45, total TTC D46"
+4,DEMO ROAD R1,Alpha Works (fictional),4,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,1732500.00,1732500.00,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+4,DEMO ROAD R1,Alpha Works (fictional),4,Approved,continuity,continuity,OK,Continuity D3 → D4,1177500.00,1177500.00,0.00,D3 cumulative HT B37; D4 previous cumulative HT C37
+4,DEMO ROAD R1,Alpha Works (fictional),4,Approved,sequence,sequence,OK,Statement sequence D3 → D4,,,,consecutive numbers
+5,DEMO ROAD R1,Alpha Works (fictional),5,Approved,retention,arithmetic,OK,Retention 10% of works,46700.00,46700.00,0.00,"works of month HT D37, retention D39"
+5,DEMO ROAD R1,Alpha Works (fictional),5,Approved,net,arithmetic,OK,Net HT = works − retention,420300.00,420300.00,0.00,"works of month HT D37, retention D39, net HT D44"
+5,DEMO ROAD R1,Alpha Works (fictional),5,Approved,vat,arithmetic,OK,VAT 20% of net HT,84060.00,84060.00,0.00,"net HT D44, VAT D45"
+5,DEMO ROAD R1,Alpha Works (fictional),5,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,504360.00,504360.00,0.00,"net HT D44, VAT D45, total TTC D46"
+5,DEMO ROAD R1,Alpha Works (fictional),5,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,2199500.00,2199500.00,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+5,DEMO ROAD R1,Alpha Works (fictional),5,Approved,continuity,continuity,OK,Continuity D4 → D5,1732500.00,1732500.00,0.00,D4 cumulative HT B37; D5 previous cumulative HT C37
+5,DEMO ROAD R1,Alpha Works (fictional),5,Approved,sequence,sequence,OK,Statement sequence D4 → D5,,,,consecutive numbers
+6,DEMO ROAD R1,Alpha Works (fictional),6,Approved,retention,arithmetic,OK,Retention 10% of works,31850.00,31850.00,0.00,"works of month HT D37, retention D39"
+6,DEMO ROAD R1,Alpha Works (fictional),6,Approved,net,arithmetic,OK,Net HT = works − retention,286650.00,286650.00,0.00,"works of month HT D37, retention D39, net HT D44"
+6,DEMO ROAD R1,Alpha Works (fictional),6,Approved,vat,arithmetic,OK,VAT 20% of net HT,57330.00,57330.00,0.00,"net HT D44, VAT D45"
+6,DEMO ROAD R1,Alpha Works (fictional),6,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,343980.00,343980.00,0.00,"net HT D44, VAT D45, total TTC D46"
+6,DEMO ROAD R1,Alpha Works (fictional),6,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,2518000.00,2518000.00,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+6,DEMO ROAD R1,Alpha Works (fictional),6,Approved,continuity,continuity,OK,Continuity D5 → D6,2199500.00,2199500.00,0.00,D5 cumulative HT B37; D6 previous cumulative HT C37
+6,DEMO ROAD R1,Alpha Works (fictional),6,Approved,sequence,sequence,OK,Statement sequence D5 → D6,,,,consecutive numbers
+7,DEMO ROAD R1,Alpha Works (fictional),7,Rejected,retention,arithmetic,OK,Retention 10% of works,57800.00,57800.00,0.00,"works of month HT D37, retention D39"
+7,DEMO ROAD R1,Alpha Works (fictional),7,Rejected,net,arithmetic,OK,Net HT = works − retention,520200.00,520200.00,0.00,"works of month HT D37, retention D39, net HT D44"
+7,DEMO ROAD R1,Alpha Works (fictional),7,Rejected,vat,arithmetic,OK,VAT 20% of net HT,104040.00,104040.00,0.00,"net HT D44, VAT D45"
+7,DEMO ROAD R1,Alpha Works (fictional),7,Rejected,ttc,arithmetic,OK,TTC = net HT + VAT,624240.00,624240.00,0.00,"net HT D44, VAT D45, total TTC D46"
+7,DEMO ROAD R1,Alpha Works (fictional),7,Rejected,cumulative,arithmetic,REVIEW,Cumulative HT = previous cumulative + works,3096000.00,3091500.00,4500.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+7,DEMO ROAD R1,Alpha Works (fictional),7,Rejected,continuity,continuity,REVIEW,Continuity D6 → D7,2513500.00,2518000.00,4500.00,D6 cumulative HT B37; D7 previous cumulative HT C37
+7,DEMO ROAD R1,Alpha Works (fictional),7,Rejected,sequence,sequence,OK,Statement sequence D6 → D7,,,,consecutive numbers
+8,DEMO ROAD R1,Alpha Works (fictional),8,Approved,retention,arithmetic,OK,Retention 10% of works,56800.00,56800.00,0.00,"works of month HT D37, retention D39"
+8,DEMO ROAD R1,Alpha Works (fictional),8,Approved,net,arithmetic,OK,Net HT = works − retention,511200.00,511200.00,0.00,"works of month HT D37, retention D39, net HT D44"
+8,DEMO ROAD R1,Alpha Works (fictional),8,Approved,vat,arithmetic,OK,VAT 20% of net HT,102240.00,102240.00,0.00,"net HT D44, VAT D45"
+8,DEMO ROAD R1,Alpha Works (fictional),8,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,613440.00,613440.00,0.00,"net HT D44, VAT D45, total TTC D46"
+8,DEMO ROAD R1,Alpha Works (fictional),8,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,3664000.00,3664000.00,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+8,DEMO ROAD R1,Alpha Works (fictional),8,Approved,continuity,continuity,OK,Continuity D7 → D8,3096000.00,3096000.00,0.00,D7 cumulative HT B37; D8 previous cumulative HT C37
+8,DEMO ROAD R1,Alpha Works (fictional),8,Approved,sequence,sequence,OK,Statement sequence D7 → D8,,,,consecutive numbers
+9,DEMO ROAD R1,Alpha Works (fictional),9,Approved,retention,arithmetic,OK,Retention 10% of works,38650.00,38650.00,0.00,"works of month HT D37, retention D39"
+9,DEMO ROAD R1,Alpha Works (fictional),9,Approved,net,arithmetic,OK,Net HT = works − retention,347850.00,347850.00,0.00,"works of month HT D37, retention D39, net HT D44"
+9,DEMO ROAD R1,Alpha Works (fictional),9,Approved,vat,arithmetic,OK,VAT 20% of net HT,69570.00,69570.00,0.00,"net HT D44, VAT D45"
+9,DEMO ROAD R1,Alpha Works (fictional),9,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,417420.00,417420.00,0.00,"net HT D44, VAT D45, total TTC D46"
+9,DEMO ROAD R1,Alpha Works (fictional),9,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,4050500.00,4050500.00,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+9,DEMO ROAD R1,Alpha Works (fictional),9,Approved,continuity,continuity,OK,Continuity D8 → D9,3664000.00,3664000.00,0.00,D8 cumulative HT B37; D9 previous cumulative HT C37
+9,DEMO ROAD R1,Alpha Works (fictional),9,Approved,sequence,sequence,OK,Statement sequence D8 → D9,,,,consecutive numbers
+10,DEMO BRIDGE B2,Beta Build (fictional),1,Approved,retention,arithmetic,OK,Retention 10% of works,52466.67,52466.67,0.00,"works of month HT D37, retention D39"
+10,DEMO BRIDGE B2,Beta Build (fictional),1,Approved,net,arithmetic,OK,Net HT = works − retention,472200.00,472200.00,0.00,"works of month HT D37, retention D39, net HT D44"
+10,DEMO BRIDGE B2,Beta Build (fictional),1,Approved,vat,arithmetic,OK,VAT 20% of net HT,94440.00,94440.00,0.00,"net HT D44, VAT D45"
+10,DEMO BRIDGE B2,Beta Build (fictional),1,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,566640.00,566640.00,0.00,"net HT D44, VAT D45, total TTC D46"
+10,DEMO BRIDGE B2,Beta Build (fictional),1,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,524666.67,524666.67,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+10,DEMO BRIDGE B2,Beta Build (fictional),1,Approved,continuity,continuity,SKIPPED,Continuity with previous décompte,,,,skipped — no previous décompte
+10,DEMO BRIDGE B2,Beta Build (fictional),1,Approved,sequence,sequence,SKIPPED,Statement sequence,,,,skipped — no previous décompte
+11,DEMO BRIDGE B2,Beta Build (fictional),2,Rejected,retention,arithmetic,REVIEW,Retention 10% of works,6200.00,34000.00,27800.00,"works of month HT D37, retention D39"
+11,DEMO BRIDGE B2,Beta Build (fictional),2,Rejected,net,arithmetic,REVIEW,Net HT = works − retention,306000.00,333800.00,27800.00,"works of month HT D37, retention D39, net HT D44"
+11,DEMO BRIDGE B2,Beta Build (fictional),2,Rejected,vat,arithmetic,OK,VAT 20% of net HT,61200.00,61200.00,0.00,"net HT D44, VAT D45"
+11,DEMO BRIDGE B2,Beta Build (fictional),2,Rejected,ttc,arithmetic,OK,TTC = net HT + VAT,367200.00,367200.00,0.00,"net HT D44, VAT D45, total TTC D46"
+11,DEMO BRIDGE B2,Beta Build (fictional),2,Rejected,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,864666.67,864666.67,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+11,DEMO BRIDGE B2,Beta Build (fictional),2,Rejected,continuity,continuity,OK,Continuity D1 → D2,524666.67,524666.67,0.00,D1 cumulative HT B37; D2 previous cumulative HT C37
+11,DEMO BRIDGE B2,Beta Build (fictional),2,Rejected,sequence,sequence,OK,Statement sequence D1 → D2,,,,consecutive numbers
+12,DEMO BRIDGE B2,Beta Build (fictional),3,Rejected,retention,arithmetic,OK,Retention 10% of works,52100.00,52100.00,0.00,"works of month HT D37, retention D39"
+12,DEMO BRIDGE B2,Beta Build (fictional),3,Rejected,net,arithmetic,OK,Net HT = works − retention,468900.00,468900.00,0.00,"works of month HT D37, retention D39, net HT D44"
+12,DEMO BRIDGE B2,Beta Build (fictional),3,Rejected,vat,arithmetic,OK,VAT 20% of net HT,93780.00,93780.00,0.00,"net HT D44, VAT D45"
+12,DEMO BRIDGE B2,Beta Build (fictional),3,Rejected,ttc,arithmetic,OK,TTC = net HT + VAT,562680.00,562680.00,0.00,"net HT D44, VAT D45, total TTC D46"
+12,DEMO BRIDGE B2,Beta Build (fictional),3,Rejected,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,1385666.67,1385666.67,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+12,DEMO BRIDGE B2,Beta Build (fictional),3,Rejected,continuity,continuity,OK,Continuity D2 → D3,864666.67,864666.67,0.00,D2 cumulative HT B37; D3 previous cumulative HT C37
+12,DEMO BRIDGE B2,Beta Build (fictional),3,Rejected,sequence,sequence,OK,Statement sequence D2 → D3,,,,consecutive numbers
+13,DEMO BRIDGE B2,Beta Build (fictional),4,Approved,retention,arithmetic,OK,Retention 10% of works,54666.67,54666.67,0.00,"works of month HT D37, retention D39"
+13,DEMO BRIDGE B2,Beta Build (fictional),4,Approved,net,arithmetic,OK,Net HT = works − retention,492000.00,492000.00,0.00,"works of month HT D37, retention D39, net HT D44"
+13,DEMO BRIDGE B2,Beta Build (fictional),4,Approved,vat,arithmetic,OK,VAT 20% of net HT,98400.00,98400.00,0.00,"net HT D44, VAT D45"
+13,DEMO BRIDGE B2,Beta Build (fictional),4,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,590400.00,590400.00,0.00,"net HT D44, VAT D45, total TTC D46"
+13,DEMO BRIDGE B2,Beta Build (fictional),4,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,1932333.34,1932333.34,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+13,DEMO BRIDGE B2,Beta Build (fictional),4,Approved,continuity,continuity,OK,Continuity D3 → D4,1385666.67,1385666.67,0.00,D3 cumulative HT B37; D4 previous cumulative HT C37
+13,DEMO BRIDGE B2,Beta Build (fictional),4,Approved,sequence,sequence,OK,Statement sequence D3 → D4,,,,consecutive numbers
+14,DEMO BRIDGE B2,Beta Build (fictional),6,Rejected,retention,arithmetic,OK,Retention 10% of works,37433.33,37433.33,0.00,"works of month HT D37, retention D39"
+14,DEMO BRIDGE B2,Beta Build (fictional),6,Rejected,net,arithmetic,OK,Net HT = works − retention,336900.00,336900.00,0.00,"works of month HT D37, retention D39, net HT D44"
+14,DEMO BRIDGE B2,Beta Build (fictional),6,Rejected,vat,arithmetic,OK,VAT 20% of net HT,67380.00,67380.00,0.00,"net HT D44, VAT D45"
+14,DEMO BRIDGE B2,Beta Build (fictional),6,Rejected,ttc,arithmetic,REVIEW,TTC = net HT + VAT,432080.00,404280.00,27800.00,"net HT D44, VAT D45, total TTC D46"
+14,DEMO BRIDGE B2,Beta Build (fictional),6,Rejected,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,2720000.00,2720000.00,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+14,DEMO BRIDGE B2,Beta Build (fictional),6,Rejected,continuity,continuity,SKIPPED,Continuity D4 → D6,,,,sequence gap
+14,DEMO BRIDGE B2,Beta Build (fictional),6,Rejected,sequence,sequence,REVIEW,Statement sequence D4 → D6 — missing D5,,,,previous available: D4
+15,DEMO BRIDGE B2,Beta Build (fictional),7,Approved,retention,arithmetic,OK,Retention 10% of works,54400.00,54400.00,0.00,"works of month HT D37, retention D39"
+15,DEMO BRIDGE B2,Beta Build (fictional),7,Approved,net,arithmetic,OK,Net HT = works − retention,489600.00,489600.00,0.00,"works of month HT D37, retention D39, net HT D44"
+15,DEMO BRIDGE B2,Beta Build (fictional),7,Approved,vat,arithmetic,OK,VAT 20% of net HT,97920.00,97920.00,0.00,"net HT D44, VAT D45"
+15,DEMO BRIDGE B2,Beta Build (fictional),7,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,587520.00,587520.00,0.00,"net HT D44, VAT D45, total TTC D46"
+15,DEMO BRIDGE B2,Beta Build (fictional),7,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,3264000.00,3264000.00,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+15,DEMO BRIDGE B2,Beta Build (fictional),7,Approved,continuity,continuity,OK,Continuity D6 → D7,2720000.00,2720000.00,0.00,D6 cumulative HT B37; D7 previous cumulative HT C37
+15,DEMO BRIDGE B2,Beta Build (fictional),7,Approved,sequence,sequence,OK,Statement sequence D6 → D7,,,,consecutive numbers
+16,DEMO WATER W3,Alpha Works (fictional),1,Approved,retention,arithmetic,OK,Retention 10% of works,50400.00,50400.00,0.00,"works of month HT D37, retention D39"
+16,DEMO WATER W3,Alpha Works (fictional),1,Approved,net,arithmetic,OK,Net HT = works − retention,453600.00,453600.00,0.00,"works of month HT D37, retention D39, net HT D44"
+16,DEMO WATER W3,Alpha Works (fictional),1,Approved,vat,arithmetic,OK,VAT 20% of net HT,90720.00,90720.00,0.00,"net HT D44, VAT D45"
+16,DEMO WATER W3,Alpha Works (fictional),1,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,544320.00,544320.00,0.00,"net HT D44, VAT D45, total TTC D46"
+16,DEMO WATER W3,Alpha Works (fictional),1,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,504000.00,504000.00,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+16,DEMO WATER W3,Alpha Works (fictional),1,Approved,continuity,continuity,SKIPPED,Continuity with previous décompte,,,,skipped — no previous décompte
+16,DEMO WATER W3,Alpha Works (fictional),1,Approved,sequence,sequence,SKIPPED,Statement sequence,,,,skipped — no previous décompte
+17,DEMO WATER W3,Alpha Works (fictional),2,Approved,retention,arithmetic,OK,Retention 10% of works,64200.00,64200.00,0.00,"works of month HT D37, retention D39"
+17,DEMO WATER W3,Alpha Works (fictional),2,Approved,net,arithmetic,OK,Net HT = works − retention,577800.00,577800.00,0.00,"works of month HT D37, retention D39, net HT D44"
+17,DEMO WATER W3,Alpha Works (fictional),2,Approved,vat,arithmetic,OK,VAT 20% of net HT,115560.00,115560.00,0.00,"net HT D44, VAT D45"
+17,DEMO WATER W3,Alpha Works (fictional),2,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,693360.00,693360.00,0.00,"net HT D44, VAT D45, total TTC D46"
+17,DEMO WATER W3,Alpha Works (fictional),2,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,1146000.00,1146000.00,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+17,DEMO WATER W3,Alpha Works (fictional),2,Approved,continuity,continuity,OK,Continuity D1 → D2,504000.00,504000.00,0.00,D1 cumulative HT B37; D2 previous cumulative HT C37
+17,DEMO WATER W3,Alpha Works (fictional),2,Approved,sequence,sequence,OK,Statement sequence D1 → D2,,,,consecutive numbers
+18,DEMO WATER W3,Alpha Works (fictional),3,Approved,retention,arithmetic,OK,Retention 10% of works,33733.33,33733.33,0.00,"works of month HT D37, retention D39"
+18,DEMO WATER W3,Alpha Works (fictional),3,Approved,net,arithmetic,OK,Net HT = works − retention,303600.00,303600.00,0.00,"works of month HT D37, retention D39, net HT D44"
+18,DEMO WATER W3,Alpha Works (fictional),3,Approved,vat,arithmetic,OK,VAT 20% of net HT,60720.00,60720.00,0.00,"net HT D44, VAT D45"
+18,DEMO WATER W3,Alpha Works (fictional),3,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,364320.00,364320.00,0.00,"net HT D44, VAT D45, total TTC D46"
+18,DEMO WATER W3,Alpha Works (fictional),3,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,1483333.33,1483333.33,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+18,DEMO WATER W3,Alpha Works (fictional),3,Approved,continuity,continuity,OK,Continuity D2 → D3,1146000.00,1146000.00,0.00,D2 cumulative HT B37; D3 previous cumulative HT C37
+18,DEMO WATER W3,Alpha Works (fictional),3,Approved,sequence,sequence,OK,Statement sequence D2 → D3,,,,consecutive numbers
+19,DEMO WATER W3,Alpha Works (fictional),4,Rejected,retention,arithmetic,OK,Retention 10% of works,57200.00,57200.00,0.00,"works of month HT D37, retention D39"
+19,DEMO WATER W3,Alpha Works (fictional),4,Rejected,net,arithmetic,OK,Net HT = works − retention,514800.00,514800.00,0.00,"works of month HT D37, retention D39, net HT D44"
+19,DEMO WATER W3,Alpha Works (fictional),4,Rejected,vat,arithmetic,OK,VAT 20% of net HT,102960.00,102960.00,0.00,"net HT D44, VAT D45"
+19,DEMO WATER W3,Alpha Works (fictional),4,Rejected,ttc,arithmetic,OK,TTC = net HT + VAT,617760.00,617760.00,0.00,"net HT D44, VAT D45, total TTC D46"
+19,DEMO WATER W3,Alpha Works (fictional),4,Rejected,cumulative,arithmetic,REVIEW,Cumulative HT = previous cumulative + works,2055333.33,2043033.33,12300.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+19,DEMO WATER W3,Alpha Works (fictional),4,Rejected,continuity,continuity,REVIEW,Continuity D3 → D4,1471033.33,1483333.33,12300.00,D3 cumulative HT B37; D4 previous cumulative HT C37
+19,DEMO WATER W3,Alpha Works (fictional),4,Rejected,sequence,sequence,OK,Statement sequence D3 → D4,,,,consecutive numbers
+20,DEMO WATER W3,Alpha Works (fictional),5,Approved,retention,arithmetic,OK,Retention 10% of works,40600.00,40600.00,0.00,"works of month HT D37, retention D39"
+20,DEMO WATER W3,Alpha Works (fictional),5,Approved,net,arithmetic,OK,Net HT = works − retention,365400.00,365400.00,0.00,"works of month HT D37, retention D39, net HT D44"
+20,DEMO WATER W3,Alpha Works (fictional),5,Approved,vat,arithmetic,OK,VAT 20% of net HT,73080.00,73080.00,0.00,"net HT D44, VAT D45"
+20,DEMO WATER W3,Alpha Works (fictional),5,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,438480.00,438480.00,0.00,"net HT D44, VAT D45, total TTC D46"
+20,DEMO WATER W3,Alpha Works (fictional),5,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,2461333.33,2461333.33,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+20,DEMO WATER W3,Alpha Works (fictional),5,Approved,continuity,continuity,OK,Continuity D4 → D5,2055333.33,2055333.33,0.00,D4 cumulative HT B37; D5 previous cumulative HT C37
+20,DEMO WATER W3,Alpha Works (fictional),5,Approved,sequence,sequence,OK,Statement sequence D4 → D5,,,,consecutive numbers
+21,DEMO WATER W3,Alpha Works (fictional),6,Approved,retention,arithmetic,OK,Retention 10% of works,55733.33,55733.33,0.00,"works of month HT D37, retention D39"
+21,DEMO WATER W3,Alpha Works (fictional),6,Approved,net,arithmetic,OK,Net HT = works − retention,501600.00,501600.00,0.00,"works of month HT D37, retention D39, net HT D44"
+21,DEMO WATER W3,Alpha Works (fictional),6,Approved,vat,arithmetic,OK,VAT 20% of net HT,100320.00,100320.00,0.00,"net HT D44, VAT D45"
+21,DEMO WATER W3,Alpha Works (fictional),6,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,601920.00,601920.00,0.00,"net HT D44, VAT D45, total TTC D46"
+21,DEMO WATER W3,Alpha Works (fictional),6,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,3018666.66,3018666.66,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+21,DEMO WATER W3,Alpha Works (fictional),6,Approved,continuity,continuity,OK,Continuity D5 → D6,2461333.33,2461333.33,0.00,D5 cumulative HT B37; D6 previous cumulative HT C37
+21,DEMO WATER W3,Alpha Works (fictional),6,Approved,sequence,sequence,OK,Statement sequence D5 → D6,,,,consecutive numbers
+22,DEMO WATER W3,Alpha Works (fictional),7,Approved,retention,arithmetic,OK,Retention 10% of works,31133.33,31133.33,0.00,"works of month HT D37, retention D39"
+22,DEMO WATER W3,Alpha Works (fictional),7,Approved,net,arithmetic,OK,Net HT = works − retention,280200.00,280200.00,0.00,"works of month HT D37, retention D39, net HT D44"
+22,DEMO WATER W3,Alpha Works (fictional),7,Approved,vat,arithmetic,OK,VAT 20% of net HT,56040.00,56040.00,0.00,"net HT D44, VAT D45"
+22,DEMO WATER W3,Alpha Works (fictional),7,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,336240.00,336240.00,0.00,"net HT D44, VAT D45, total TTC D46"
+22,DEMO WATER W3,Alpha Works (fictional),7,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,3329999.99,3329999.99,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+22,DEMO WATER W3,Alpha Works (fictional),7,Approved,continuity,continuity,OK,Continuity D6 → D7,3018666.66,3018666.66,0.00,D6 cumulative HT B37; D7 previous cumulative HT C37
+22,DEMO WATER W3,Alpha Works (fictional),7,Approved,sequence,sequence,OK,Statement sequence D6 → D7,,,,consecutive numbers
+23,DEMO WATER W3,Alpha Works (fictional),8,Rejected,retention,arithmetic,OK,Retention 10% of works,52066.67,52066.67,0.00,"works of month HT D37, retention D39"
+23,DEMO WATER W3,Alpha Works (fictional),8,Rejected,net,arithmetic,OK,Net HT = works − retention,468600.00,468600.00,0.00,"works of month HT D37, retention D39, net HT D44"
+23,DEMO WATER W3,Alpha Works (fictional),8,Rejected,vat,arithmetic,REVIEW,VAT 20% of net HT,121520.00,93720.00,27800.00,"net HT D44, VAT D45"
+23,DEMO WATER W3,Alpha Works (fictional),8,Rejected,ttc,arithmetic,OK,TTC = net HT + VAT,590120.00,590120.00,0.00,"net HT D44, VAT D45, total TTC D46"
+23,DEMO WATER W3,Alpha Works (fictional),8,Rejected,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,3850666.66,3850666.66,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+23,DEMO WATER W3,Alpha Works (fictional),8,Rejected,continuity,continuity,OK,Continuity D7 → D8,3329999.99,3329999.99,0.00,D7 cumulative HT B37; D8 previous cumulative HT C37
+23,DEMO WATER W3,Alpha Works (fictional),8,Rejected,sequence,sequence,OK,Statement sequence D7 → D8,,,,consecutive numbers
+24,DEMO WATER W3,Alpha Works (fictional),9,Approved,retention,arithmetic,OK,Retention 10% of works,65266.67,65266.67,0.00,"works of month HT D37, retention D39"
+24,DEMO WATER W3,Alpha Works (fictional),9,Approved,net,arithmetic,OK,Net HT = works − retention,587400.00,587400.00,0.00,"works of month HT D37, retention D39, net HT D44"
+24,DEMO WATER W3,Alpha Works (fictional),9,Approved,vat,arithmetic,OK,VAT 20% of net HT,117480.00,117480.00,0.00,"net HT D44, VAT D45"
+24,DEMO WATER W3,Alpha Works (fictional),9,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,704880.00,704880.00,0.00,"net HT D44, VAT D45, total TTC D46"
+24,DEMO WATER W3,Alpha Works (fictional),9,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,4503333.33,4503333.33,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+24,DEMO WATER W3,Alpha Works (fictional),9,Approved,continuity,continuity,OK,Continuity D8 → D9,3850666.66,3850666.66,0.00,D8 cumulative HT B37; D9 previous cumulative HT C37
+24,DEMO WATER W3,Alpha Works (fictional),9,Approved,sequence,sequence,OK,Statement sequence D8 → D9,,,,consecutive numbers
+25,DEMO WATER W3,Alpha Works (fictional),10,Pending,retention,arithmetic,OK,Retention 10% of works,34200.00,34200.00,0.00,"works of month HT D37, retention D39"
+25,DEMO WATER W3,Alpha Works (fictional),10,Pending,net,arithmetic,OK,Net HT = works − retention,307800.00,307800.00,0.00,"works of month HT D37, retention D39, net HT D44"
+25,DEMO WATER W3,Alpha Works (fictional),10,Pending,vat,arithmetic,OK,VAT 20% of net HT,61560.00,61560.00,0.00,"net HT D44, VAT D45"
+25,DEMO WATER W3,Alpha Works (fictional),10,Pending,ttc,arithmetic,OK,TTC = net HT + VAT,369360.00,369360.00,0.00,"net HT D44, VAT D45, total TTC D46"
+25,DEMO WATER W3,Alpha Works (fictional),10,Pending,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,4845333.33,4845333.33,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+25,DEMO WATER W3,Alpha Works (fictional),10,Pending,continuity,continuity,OK,Continuity D9 → D10,4503333.33,4503333.33,0.00,D9 cumulative HT B37; D10 previous cumulative HT C37
+25,DEMO WATER W3,Alpha Works (fictional),10,Pending,sequence,sequence,OK,Statement sequence D9 → D10,,,,consecutive numbers
+26,DEMO SCHOOL S4,Gamma Infra (fictional),1,Approved,retention,arithmetic,OK,Retention 10% of works,17622.22,17622.22,0.00,"works of month HT D37, retention D39"
+26,DEMO SCHOOL S4,Gamma Infra (fictional),1,Approved,net,arithmetic,OK,Net HT = works − retention,158600.00,158600.00,0.00,"works of month HT D37, retention D39, net HT D44"
+26,DEMO SCHOOL S4,Gamma Infra (fictional),1,Approved,vat,arithmetic,OK,VAT 20% of net HT,31720.00,31720.00,0.00,"net HT D44, VAT D45"
+26,DEMO SCHOOL S4,Gamma Infra (fictional),1,Approved,ttc,arithmetic,OK,TTC = net HT + VAT,190320.00,190320.00,0.00,"net HT D44, VAT D45, total TTC D46"
+26,DEMO SCHOOL S4,Gamma Infra (fictional),1,Approved,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,176222.22,176222.22,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+26,DEMO SCHOOL S4,Gamma Infra (fictional),1,Approved,continuity,continuity,SKIPPED,Continuity with previous décompte,,,,skipped — no previous décompte
+26,DEMO SCHOOL S4,Gamma Infra (fictional),1,Approved,sequence,sequence,SKIPPED,Statement sequence,,,,skipped — no previous décompte
+27,DEMO SCHOOL S4,Gamma Infra (fictional),2,Rejected,retention,arithmetic,OK,Retention 10% of works,27155.56,27155.56,0.00,"works of month HT D37, retention D39"
+27,DEMO SCHOOL S4,Gamma Infra (fictional),2,Rejected,net,arithmetic,OK,Net HT = works − retention,244400.00,244400.00,0.00,"works of month HT D37, retention D39, net HT D44"
+27,DEMO SCHOOL S4,Gamma Infra (fictional),2,Rejected,vat,arithmetic,OK,VAT 20% of net HT,48880.00,48880.00,0.00,"net HT D44, VAT D45"
+27,DEMO SCHOOL S4,Gamma Infra (fictional),2,Rejected,ttc,arithmetic,OK,TTC = net HT + VAT,293280.00,293280.00,0.00,"net HT D44, VAT D45, total TTC D46"
+27,DEMO SCHOOL S4,Gamma Infra (fictional),2,Rejected,cumulative,arithmetic,REVIEW,Cumulative HT = previous cumulative + works,475577.78,447777.78,27800.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+27,DEMO SCHOOL S4,Gamma Infra (fictional),2,Rejected,continuity,continuity,OK,Continuity D1 → D2,176222.22,176222.22,0.00,D1 cumulative HT B37; D2 previous cumulative HT C37
+27,DEMO SCHOOL S4,Gamma Infra (fictional),2,Rejected,sequence,sequence,OK,Statement sequence D1 → D2,,,,consecutive numbers
+28,DEMO SCHOOL S4,Gamma Infra (fictional),3,Rejected,retention,arithmetic,OK,Retention 10% of works,16422.22,16422.22,0.00,"works of month HT D37, retention D39"
+28,DEMO SCHOOL S4,Gamma Infra (fictional),3,Rejected,net,arithmetic,OK,Net HT = works − retention,147800.00,147800.00,0.00,"works of month HT D37, retention D39, net HT D44"
+28,DEMO SCHOOL S4,Gamma Infra (fictional),3,Rejected,vat,arithmetic,OK,VAT 20% of net HT,29560.00,29560.00,0.00,"net HT D44, VAT D45"
+28,DEMO SCHOOL S4,Gamma Infra (fictional),3,Rejected,ttc,arithmetic,OK,TTC = net HT + VAT,177360.00,177360.00,0.00,"net HT D44, VAT D45, total TTC D46"
+28,DEMO SCHOOL S4,Gamma Infra (fictional),3,Rejected,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,612000.00,612000.00,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+28,DEMO SCHOOL S4,Gamma Infra (fictional),3,Rejected,continuity,continuity,REVIEW,Continuity D2 → D3,447777.78,475577.78,27800.00,D2 cumulative HT B37; D3 previous cumulative HT C37
+28,DEMO SCHOOL S4,Gamma Infra (fictional),3,Rejected,sequence,sequence,OK,Statement sequence D2 → D3,,,,consecutive numbers
+29,DEMO SCHOOL S4,Gamma Infra (fictional),4,Rejected,retention,arithmetic,OK,Retention 10% of works,26555.56,26555.56,0.00,"works of month HT D37, retention D39"
+29,DEMO SCHOOL S4,Gamma Infra (fictional),4,Rejected,net,arithmetic,OK,Net HT = works − retention,239000.00,239000.00,0.00,"works of month HT D37, retention D39, net HT D44"
+29,DEMO SCHOOL S4,Gamma Infra (fictional),4,Rejected,vat,arithmetic,REVIEW,VAT 20% of net HT,75600.00,47800.00,27800.00,"net HT D44, VAT D45"
+29,DEMO SCHOOL S4,Gamma Infra (fictional),4,Rejected,ttc,arithmetic,OK,TTC = net HT + VAT,314600.00,314600.00,0.00,"net HT D44, VAT D45, total TTC D46"
+29,DEMO SCHOOL S4,Gamma Infra (fictional),4,Rejected,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,877555.56,877555.56,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+29,DEMO SCHOOL S4,Gamma Infra (fictional),4,Rejected,continuity,continuity,OK,Continuity D3 → D4,612000.00,612000.00,0.00,D3 cumulative HT B37; D4 previous cumulative HT C37
+29,DEMO SCHOOL S4,Gamma Infra (fictional),4,Rejected,sequence,sequence,OK,Statement sequence D3 → D4,,,,consecutive numbers
+30,DEMO SCHOOL S4,Gamma Infra (fictional),5,Rejected,retention,arithmetic,REVIEW,Retention 10% of works,24277.78,28777.78,4500.00,"works of month HT D37, retention D39"
+30,DEMO SCHOOL S4,Gamma Infra (fictional),5,Rejected,net,arithmetic,REVIEW,Net HT = works − retention,259000.00,263500.00,4500.00,"works of month HT D37, retention D39, net HT D44"
+30,DEMO SCHOOL S4,Gamma Infra (fictional),5,Rejected,vat,arithmetic,OK,VAT 20% of net HT,51800.00,51800.00,0.00,"net HT D44, VAT D45"
+30,DEMO SCHOOL S4,Gamma Infra (fictional),5,Rejected,ttc,arithmetic,OK,TTC = net HT + VAT,310800.00,310800.00,0.00,"net HT D44, VAT D45, total TTC D46"
+30,DEMO SCHOOL S4,Gamma Infra (fictional),5,Rejected,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,1165333.34,1165333.34,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+30,DEMO SCHOOL S4,Gamma Infra (fictional),5,Rejected,continuity,continuity,OK,Continuity D4 → D5,877555.56,877555.56,0.00,D4 cumulative HT B37; D5 previous cumulative HT C37
+30,DEMO SCHOOL S4,Gamma Infra (fictional),5,Rejected,sequence,sequence,OK,Statement sequence D4 → D5,,,,consecutive numbers
+31,DEMO SCHOOL S4,Gamma Infra (fictional),6,Pending,retention,arithmetic,OK,Retention 10% of works,29933.33,29933.33,0.00,"works of month HT D37, retention D39"
+31,DEMO SCHOOL S4,Gamma Infra (fictional),6,Pending,net,arithmetic,OK,Net HT = works − retention,269400.00,269400.00,0.00,"works of month HT D37, retention D39, net HT D44"
+31,DEMO SCHOOL S4,Gamma Infra (fictional),6,Pending,vat,arithmetic,OK,VAT 20% of net HT,53880.00,53880.00,0.00,"net HT D44, VAT D45"
+31,DEMO SCHOOL S4,Gamma Infra (fictional),6,Pending,ttc,arithmetic,OK,TTC = net HT + VAT,323280.00,323280.00,0.00,"net HT D44, VAT D45, total TTC D46"
+31,DEMO SCHOOL S4,Gamma Infra (fictional),6,Pending,cumulative,arithmetic,OK,Cumulative HT = previous cumulative + works,1464666.67,1464666.67,0.00,"previous cumulative HT C37, works of month HT D37, cumulative HT B37"
+31,DEMO SCHOOL S4,Gamma Infra (fictional),6,Pending,continuity,continuity,OK,Continuity D5 → D6,1165333.34,1165333.34,0.00,D5 cumulative HT B37; D6 previous cumulative HT C37
+31,DEMO SCHOOL S4,Gamma Infra (fictional),6,Pending,sequence,sequence,OK,Statement sequence D5 → D6,,,,consecutive numbers
