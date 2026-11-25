@@ -9,10 +9,14 @@ import streamlit as st
 from scripts.ai_reader import MAX_UPLOAD_BYTES, read_with_ai
 from scripts.ai_writer import Texts, findings_json, write_texts
 from scripts.audit import all_passed, audit_batch, display_frame
-from scripts.controller_checks import (EXAMPLES_DIR, FIELDS, LABELS, SOURCE_AI, SOURCE_EDITED, apply_edits,
-                                       from_extractor, parse_edits, previous_from_history, review_count, run_checks)
+from scripts.controller_checks import (EXAMPLES_DIR, FIELDS, LABELS, SOURCE_AI, SOURCE_EDITED, SOURCE_PDF_TEXT,
+                                       SOURCE_VISION, apply_edits, from_extractor, load_saved_answer, parse_edits,
+                                       previous_from_history, review_count, run_checks)
 from scripts.controller_review import email_eml, memo_markdown, trail_row
 from scripts.decompte_extractor import extract_decompte
+from scripts.documents import MIME, check_limits, detect_kind
+from scripts.pdf_reader import read_pdf_with_ai, trace_pdf
+from scripts.vision_reader import parse_vision_answer, read_with_vision
 from scripts.policy import load_policy
 from scripts.reports import REPORT_NAMES, verified_report
 from scripts.workbooks import MAX_FILES, preview_workbook, workbook_bytes
@@ -131,6 +135,13 @@ AI_CALL_LIMIT = 10
 PRIVACY_TEXT = ('This file contains no confidential data. It will be sent to Google Gemini (free tier), '
                 'which may use it to improve its products.')
 ICONS = {'OK': '✅ OK', 'WARNING': '⚠️ WARNING', 'REVIEW': '⚠️ REVIEW', 'SKIPPED': '⏭️ SKIPPED'}
+AI_SOURCES = (SOURCE_AI, SOURCE_PDF_TEXT, SOURCE_VISION)
+SAVED_BADGE = 'Saved example answer (AI offline)'
+VISION_NOTICE = ('These numbers were typed by the AI from the picture. '
+                 'Compare each one with the document before confirming.')
+NO_TICK_DOC = 'PDF and photo reading uses Gemini. Tick the privacy box above to allow it.'
+OFFLINE_DOC = 'AI is offline (template mode). PDF and photo reading needs AI; upload an .xlsx instead.'
+UNAVAILABLE = 'AI reading is unavailable right now (quota or network). Try again in a new session.'
 
 
 class NotCached(Exception):
@@ -178,7 +189,89 @@ def set_source(name, data, example):
                                        'digest': hashlib.sha256(data).hexdigest()}
 
 
+@st.cache_data(show_spinner=False, max_entries=100)
+def cached_document_read(digest, kind, _data, _key):
+    """Live PDF/photo read. A PDF without usable text (a scan) goes to vision. Returns (statement, read_method)."""
+    if kind == 'pdf':
+        try:
+            statement, method = read_pdf_with_ai(_data, _key), 'PDF text'
+        except ValueError:  # NO_TEXT
+            statement, method = read_with_vision(_data, MIME['pdf'], _key), 'AI vision'
+    else:
+        statement, method = read_with_vision(_data, MIME[kind], _key), 'AI vision'
+    if statement is None:
+        raise NotCached()
+    return statement, method
+
+
+def upload_problem(data):
+    """Plain message for an upload that is the wrong type or over a limit, else None."""
+    try:
+        kind = detect_kind(data)
+    except ValueError as error:
+        too_big = len(data) > MAX_UPLOAD_BYTES
+        return 'This file is larger than 2 MB. The AI Controller accepts files up to 2 MB.' if too_big else str(error)
+    try:
+        check_limits(kind, data)
+    except ValueError as error:
+        return str(error)
+    return None
+
+
 def read_values(source, key, allow_ai):
+    """-> (statement, problem, read_method)."""
+    kind = detect_kind(source['data'])
+    check_limits(kind, source['data'])
+    if kind != 'xlsx':
+        return read_document(source, kind, key, allow_ai)
+    statement, problem = read_workbook(source, key, allow_ai)
+    return statement, problem, None
+
+
+def live_document_read(source, kind, key):
+    cache_key = (source['digest'], 'read')
+    failed = st.session_state.setdefault('ctrl_ai_failed', set())
+    if cache_key in failed:
+        return None, None, UNAVAILABLE
+    if not ai_call_allowed(cache_key):
+        return None, None, f'AI limit reached for this session ({AI_CALL_LIMIT} calls). Use an .xlsx décompte.'
+    try:
+        with st.spinner('Gemini is reading the document…'):
+            statement, method = cached_document_read(source['digest'], kind, source['data'], key)
+    except NotCached:
+        failed.add(cache_key)
+        return None, None, UNAVAILABLE
+    return statement, method, None
+
+
+def saved_document_read(source, kind):
+    answer = load_saved_answer(source['name'])
+    if answer is None:
+        return None
+    if kind == 'pdf':
+        return trace_pdf(source['data'], answer), 'PDF text (saved)'
+    return parse_vision_answer(answer, 'image'), 'AI vision (saved)'
+
+
+def read_document(source, kind, key, allow_ai):
+    """PDF or photo: live AI when allowed; bundled examples fall back to their saved answer."""
+    if not allow_ai:
+        return None, NO_TICK_DOC, None
+    if not key and not source['example']:
+        return None, OFFLINE_DOC, None
+    problem = None
+    if key:
+        statement, method, problem = live_document_read(source, kind, key)
+        if statement is not None:
+            return statement, None, method
+    saved = saved_document_read(source, kind) if source['example'] else None
+    if saved is None:
+        return None, problem or UNAVAILABLE, None
+    st.info(SAVED_BADGE)
+    return saved[0], None, saved[1]
+
+
+def read_workbook(source, key, allow_ai):
     data = source['data']
     workbook_bytes(data)
     try:
@@ -189,10 +282,9 @@ def read_values(source, key, allow_ai):
         return None, 'Layout not supported by the fixed reader. Tick the privacy box above to allow AI reading.'
     if not key:
         return None, 'Layout not supported by the fixed reader, and AI is offline (template mode). Use a standard-layout décompte.'
-    unavailable = 'AI reading is unavailable right now (quota or network). Try again in a new session.'
     cache_key = (source['digest'], 'read')
     if cache_key in st.session_state.setdefault('ctrl_ai_failed', set()):
-        return None, unavailable
+        return None, UNAVAILABLE
     if not ai_call_allowed(cache_key):
         return None, f'AI limit reached for this session ({AI_CALL_LIMIT} calls). Use a standard-layout décompte.'
     try:
@@ -200,7 +292,7 @@ def read_values(source, key, allow_ai):
             return cached_ai_read(source['digest'], data, key), None
     except NotCached:
         st.session_state['ctrl_ai_failed'].add(cache_key)
-        return None, unavailable
+        return None, UNAVAILABLE
 
 
 def values_frame(statement):
@@ -209,14 +301,25 @@ def values_frame(statement):
                          for f, v in ((f, statement.values[f]) for f in FIELDS)])
 
 
-def confirm_values(statement, digest):
+def confirm_values(statement, digest, source=None):
     confirmed = st.session_state.setdefault('ctrl_confirmed', {})
     if digest in confirmed:
         return confirmed[digest]
     st.warning('Some values were found by AI. Check them, correct them if needed, then click Confirm. '
                'No check runs before you confirm.')
-    st.caption('Values marked "found by AI" were located by Gemini; Python read each one from its cell. '
-               'Uncertain = the row or column label does not match.')
+    sources = {v.source for v in statement.values.values()}
+    if SOURCE_VISION in sources:
+        st.warning(VISION_NOTICE)
+        if source is not None and detect_kind(source['data']) in ('jpeg', 'png'):
+            st.image(source['data'], caption=source['name'], width=520)
+        else:
+            st.caption('PDF page sent to AI')
+    elif SOURCE_PDF_TEXT in sources:
+        st.caption('Values marked "PDF text (AI located)" were matched by Gemini; Python read each number from '
+                   'the PDF text itself. Uncertain = the line or column header label does not match.')
+    else:
+        st.caption('Values marked "found by AI" were located by Gemini; Python read each one from its cell. '
+                   'Uncertain = the row or column label does not match.')
     edited = st.data_editor(values_frame(statement), disabled=['Field', 'Cell', 'Source', 'Uncertain'],
                             hide_index=True, width='stretch', key=f'ctrl_editor_{digest[:12]}')
     a, b = st.columns(2)
@@ -303,16 +406,22 @@ def controller_page():
         set_source('DEMO_DP_N5.xlsx', (EXAMPLES_DIR / 'DEMO_DP_N5.xlsx').read_bytes(), True)
     if b.button('▶ Try example: new layout (AI reading)', key='ctrl_example_new'):
         set_source('DEMO_DP_N5_NEW_LAYOUT.xlsx', (EXAMPLES_DIR / 'DEMO_DP_N5_NEW_LAYOUT.xlsx').read_bytes(), True)
-    uploaded = st.file_uploader('Or upload your own synthetic .xlsx décompte (max 2 MB, first sheet)',
-                                type=['xlsx'], key='ctrl_upload')
+    c, d = st.columns(2)
+    if c.button('▶ Try example: PDF', key='ctrl_example_pdf'):
+        set_source('DEMO_DP_N5.pdf', (EXAMPLES_DIR / 'DEMO_DP_N5.pdf').read_bytes(), True)
+    if d.button('▶ Try example: photo', key='ctrl_example_photo'):
+        set_source('DEMO_DP_N5_PHOTO.jpg', (EXAMPLES_DIR / 'DEMO_DP_N5_PHOTO.jpg').read_bytes(), True)
+    uploaded = st.file_uploader('Or upload your own synthetic décompte (.xlsx, .pdf, .jpg, .png)',
+                                type=['xlsx', 'pdf', 'jpg', 'jpeg', 'png'], key='ctrl_upload')
     privacy = st.checkbox(PRIVACY_TEXT, key='ctrl_privacy')
     previous_upload = st.file_uploader('Optional: the previous décompte, for continuity and sequence checks',
                                        type=['xlsx'], key='ctrl_prev_upload')
     if uploaded is not None:
         data = uploaded.getvalue()
         digest = hashlib.sha256(data).hexdigest()
-        if len(data) > MAX_UPLOAD_BYTES:
-            st.error('This file is larger than 2 MB. The AI Controller accepts files up to 2 MB.')
+        problem = upload_problem(data)
+        if problem:
+            st.error(problem)
             show()
             return
         if st.session_state.get('ctrl_upload_digest') != digest:
@@ -326,16 +435,16 @@ def controller_page():
     allow_ai = bool(source['example'] or privacy)
     st.caption(f"File: {source['name']}" + ('' if allow_ai else ' • AI disabled until you tick the privacy box'))
     try:
-        statement, problem = read_values(source, key, allow_ai)
+        statement, problem, read_method = read_values(source, key, allow_ai)
     except ValueError as error:
-        statement, problem = None, str(error)
+        statement, problem, read_method = None, str(error), None
     if statement is None:
         steps['Read'] = '⚠️'
         show()
         st.warning(problem)
         return
-    if any(v.source == SOURCE_AI for v in statement.values.values()):
-        statement = confirm_values(statement, source['digest'])
+    if any(v.source in AI_SOURCES for v in statement.values.values()):
+        statement = confirm_values(statement, source['digest'], source)
         if statement is None:
             show()
             return
@@ -374,9 +483,10 @@ def controller_page():
     if new_click:
         clicked, final, decided_at = new_click
         ai_read = any(v.source in (SOURCE_AI, SOURCE_EDITED) for v in statement.values.values())
+        read_method = read_method or ('found by AI' if ai_read else 'fixed layout')
         save_decision(source=source, statement=statement, findings=findings, app_texts=texts, final_texts=final,
                       decision=clicked, decided_at=decided_at, opened_at=opened_at, language=language,
-                      read_method='found by AI' if ai_read else 'fixed layout', rule_version=policy.version)
+                      read_method=read_method, rule_version=policy.version)
     steps['Review'] = {'Approved': '✅', 'Rejected': '❌'}.get(decision, '⏳')
     show()
     trail = st.session_state.get('ctrl_trail', [])

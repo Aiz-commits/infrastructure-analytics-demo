@@ -1,4 +1,5 @@
 """AI Controller checks: pure Python, stated values, one step per check. No Streamlit, no AI."""
+import json
 import re
 from dataclasses import dataclass, replace
 from decimal import Decimal
@@ -81,6 +82,20 @@ def parse_edits(raw_values):
         except ValueError:
             bad.append(field)
     return edits, bad
+
+
+SAVED_ANSWER_FILES = ('DEMO_DP_N5.pdf', 'DEMO_DP_N5_PHOTO.jpg')
+
+
+def load_saved_answer(name):
+    """The committed example answer for a bundled PDF/photo (used when the AI is offline). Bundled names only."""
+    if name not in SAVED_ANSWER_FILES:
+        return None
+    try:
+        value = json.loads((EXAMPLES_DIR / f'{name}.answer.json').read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
 
 
 def known_projects(folder=HISTORY_DIR):
