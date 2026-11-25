@@ -103,7 +103,7 @@ management view: billed vs contract, findings by type and contractor, and time t
 - Power BI reads views only, with a read-only login, and never recalculates an audit result.
   `powerbi/expected_totals.json` holds the numbers the report must show.
 
-Build guide, measures, theme and offline CSVs: [`powerbi/README.md`](powerbi/README.md).
+Build guide, measures, theme and offline CSVs: [`powerbi/README.md`](powerbi/README.md). Click-by-click: [`powerbi/STEP_BY_STEP.md`](powerbi/STEP_BY_STEP.md).
 
 ```bash
 python -m scripts.portfolio --load
