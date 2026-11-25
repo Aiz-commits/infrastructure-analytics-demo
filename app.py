@@ -344,6 +344,9 @@ def controller_page():
     st.subheader('Values read')
     st.dataframe(values_frame(statement), hide_index=True, width='stretch')
     findings = run_checks(statement, previous_values(source, previous_upload), policy)
+    # First time the checks were shown for this file and language: start of 'time to decision' (Phase 2.5).
+    opened_at = st.session_state.setdefault('ctrl_opened', {}).setdefault(
+        f'{source["digest"][:12]}_{language}', datetime.now(timezone.utc))
     steps['Check'] = '⚠️' if review_count(findings) else '✅'
     st.subheader('Checks')
     st.dataframe(findings_frame(findings), hide_index=True, width='stretch')
@@ -372,7 +375,7 @@ def controller_page():
         clicked, final, decided_at = new_click
         ai_read = any(v.source in (SOURCE_AI, SOURCE_EDITED) for v in statement.values.values())
         save_decision(source=source, statement=statement, findings=findings, app_texts=texts, final_texts=final,
-                      decision=clicked, decided_at=decided_at, language=language,
+                      decision=clicked, decided_at=decided_at, opened_at=opened_at, language=language,
                       read_method='found by AI' if ai_read else 'fixed layout', rule_version=policy.version)
     steps['Review'] = {'Approved': '✅', 'Rejected': '❌'}.get(decision, '⏳')
     show()

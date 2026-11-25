@@ -44,7 +44,7 @@ def mark_values_edited(digest):
 
 
 def save_decision(*, source, statement, findings, app_texts, final_texts, decision, decided_at, language,
-                  read_method, rule_version):
+                  read_method, rule_version, opened_at=None):
     """Called once per Approve/Reject click. Shows one caption; never raises."""
     if not source['example']:
         st.caption('Uploads are never saved to the public history.')
@@ -67,7 +67,7 @@ def save_decision(*, source, statement, findings, app_texts, final_texts, decisi
              (app_texts.memo, app_texts.email_subject, app_texts.email_body)
     record = RunRecord(decided_at, decision, source['name'], source['digest'], statement.project or '',
                        statement.number, read_method, language, app_texts.ai_used, edited, rule_version,
-                       app_texts.memo, app_texts.email_subject, app_texts.email_body)
+                       app_texts.memo, app_texts.email_subject, app_texts.email_body, opened_at)
     if _database_down():
         st.caption(BUSY)
         return
