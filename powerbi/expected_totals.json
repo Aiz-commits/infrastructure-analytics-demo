@@ -1,0 +1,56 @@
+{
+  "label": "Synthetic portfolio — generated, not real",
+  "seed": 2025,
+  "portfolio": {
+    "contract_ttc": "18600000.00",
+    "billed_ttc": "14412710.00",
+    "pct_contract_billed": "77.49",
+    "statements": 31,
+    "pending_statements": 2,
+    "review_findings": 15,
+    "rejected_statements": 11,
+    "median_days_to_decision": "3.99",
+    "target_days": "5",
+    "pct_decided_within_target": "65.52"
+  },
+  "projects": {
+    "DEMO ROAD R1": {
+      "contractor": "Alpha Works (fictional)",
+      "contract_ttc": "5400000.00",
+      "billed_ttc": "4435790.00",
+      "pct_contract_billed": "82.14"
+    },
+    "DEMO BRIDGE B2": {
+      "contractor": "Beta Build (fictional)",
+      "contract_ttc": "3600000.00",
+      "billed_ttc": "3106520.00",
+      "pct_contract_billed": "86.29"
+    },
+    "DEMO WATER W3": {
+      "contractor": "Alpha Works (fictional)",
+      "contract_ttc": "7200000.00",
+      "billed_ttc": "5260760.00",
+      "pct_contract_billed": "73.07"
+    },
+    "DEMO SCHOOL S4": {
+      "contractor": "Gamma Infra (fictional)",
+      "contract_ttc": "2400000.00",
+      "billed_ttc": "1609640.00",
+      "pct_contract_billed": "67.07"
+    }
+  },
+  "contractors": {
+    "Alpha Works (fictional)": {
+      "review_findings": 6,
+      "median_days_to_decision": "3.31"
+    },
+    "Beta Build (fictional)": {
+      "review_findings": 4,
+      "median_days_to_decision": "5.77"
+    },
+    "Gamma Infra (fictional)": {
+      "review_findings": 5,
+      "median_days_to_decision": "12.17"
+    }
+  }
+}

@@ -72,12 +72,12 @@ A dashboard built only on the live history would show activity (runs, decisions,
 
 ### 7.3 Synthetic portfolio
 
-- `scripts/portfolio.py` (no Streamlit): generates a fixed, seeded portfolio, for example **3 projects × 2–3 contractors × 6–10 statements**, with contract values in DH.
-- Each statement is built as a `ControllerStatement` and passed through the **real** `run_checks` with the real policy. About 1 in 5 statements gets a planted problem (continuity gap, VAT off, retention off, missing statement) so findings are produced by Python, not written by hand.
-- Decision and timing are simulated with a seeded random generator: `submitted_at`, `opened_at`, `decided_at`, decision (Rejected more likely when a REVIEW finding exists). Labelled simulated.
-- Tables: `portfolio_projects` (project, contractor, contract_ttc, start_date), `portfolio_statements` (one row per statement with the 7 values and the timings), `portfolio_findings` (same columns as `controller_findings`).
+- `scripts/portfolio.py` (no Streamlit): generates a fixed, seeded portfolio: **4 projects, 3 fictional contractors (one runs two projects), 31 statements**, contract values in DH. Cells follow the standard template (row 37) so evidence reads like a real check.
+- Each statement is built as a `Statement` and passed through the **real** `run_checks` with the real policy. 10 planted problems listed in one `PLANTED` table (VAT, retention, TTC, cumulative, continuity, one missing statement) so findings are produced by Python, not written by hand.
+- Decision and timing are simulated with a seeded random generator: `submitted_at`, `opened_at`, `decided_at`, `days_to_decision` (stored, so views stay plain SQL). A statement with a REVIEW finding is always Rejected; two latest statements stay Pending. Labelled simulated.
+- Tables: `portfolio_projects` (project, contractor, contract_ttc, start_date), `portfolio_statements` (one row per statement with the 7 values, running billed TTC, timings and the `planted_problem` answer key), `portfolio_findings` (same columns as `controller_findings`).
 - Deterministic: the same seed gives the same rows; a test pins the totals.
-- Loaded by a command the author runs once: `python -m scripts.portfolio --load` (uses `DATABASE_URL`; replaces only `portfolio_*` tables). Also `--csv outputs/portfolio/` so Power BI can be built offline without Neon.
+- Loaded by a command the author runs once: `python -m scripts.portfolio --load` (uses `DATABASE_URL`; deletes and re-inserts only `portfolio_*` rows, so views and grants survive). Also `--csv powerbi/data` so Power BI can be built offline without Neon (`outputs/` is kept for the hashed demo reports).
 
 ### 7.4 SQL views (the only thing Power BI reads)
 
@@ -85,10 +85,11 @@ A dashboard built only on the live history would show activity (runs, decisions,
 |---|---|---|
 | `v_controller_decisions` (exists) + `opened_at`, `minutes_to_decision` | one live run | Page 1 |
 | `v_controller_findings` | one live finding, with run date, decision, language | Page 1 |
-| `v_portfolio_statements` | one statement: project, contractor, number, works, cumulative, ttc, contract_ttc, % of contract billed, review_count, decision, days submitted→decided | Pages 2–4 |
+| `v_portfolio_projects` | one project: contractor, contract_ttc, billed_ttc, statements | Pages 2–4 (dimension for slicers) |
+| `v_portfolio_statements` | one statement: project, contractor, number, the 7 values, cumulative_ttc_billed, contract_ttc, timings, decision, days_to_decision, review_count | Pages 2–4 |
 | `v_portfolio_findings` | one finding with project, contractor, statement, check type (`check_id` grouped: arithmetic / continuity / sequence / missing value) | Page 3 |
 
-Views live in `scripts/history.py` (live) and `scripts/portfolio.py` (portfolio), created by the same `ensure_schema` pattern. Tested on SQLite.
+Views live in `scripts/history.py` (live) and `scripts/portfolio.py` (portfolio), created by a shared `create_views` (CREATE OR REPLACE on Postgres, so Power BI grants survive). Column lists are a fixed contract, pinned by tests, so Excelium can reuse the report by producing the same views.
 
 ### 7.5 Report pages
 
@@ -101,7 +102,7 @@ Slicers on pages 2–4: project, contractor, period. Theme: a `powerbi/theme.jso
 
 ### 7.6 Files in the repo
 
-- `powerbi/README.md` — step-by-step build guide for Power BI Desktop: connect to Neon (or the CSVs), load the 4 views, relationships, measures, pages.
+- `powerbi/README.md` — step-by-step build guide for Power BI Desktop: connect to Neon (or the CSVs), load the 5 views, relationships, measures, pages, reconciliation, and the view contract for Excelium.
 - `powerbi/measures.dax` — every measure with a one-line comment (totals, counts, ratios, medians only).
 - `powerbi/theme.json` — report theme.
 - `powerbi/readonly_role.sql` — `CREATE ROLE powerbi_reader ...; GRANT SELECT` on the views only (run once by the author in the Neon SQL editor).

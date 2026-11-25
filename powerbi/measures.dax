@@ -1,0 +1,87 @@
+// Power BI measures for the Phase 2.5 management dashboard.
+// Rule: Power BI only counts, sums, divides and takes medians. Every audit result (retention, VAT,
+// continuity...) comes from the Python checks and is read from the views. Never re-derive them here.
+// Create each measure with Modeling > New measure, in the table named before the "|".
+// Expected values for the synthetic portfolio: powerbi/expected_totals.json.
+
+// ---------- Page 1: Live app activity (table v_controller_decisions) ----------
+
+v_controller_decisions | Runs Saved =
+COUNTROWS ( v_controller_decisions )
+
+v_controller_decisions | Approved Runs =
+CALCULATE ( [Runs Saved], v_controller_decisions[decision] = "Approved" )
+
+v_controller_decisions | Rejected Runs =
+CALCULATE ( [Runs Saved], v_controller_decisions[decision] = "Rejected" )
+
+v_controller_decisions | Approval Rate =
+DIVIDE ( [Approved Runs], [Runs Saved] )
+
+v_controller_decisions | Problems Flagged =
+SUM ( v_controller_decisions[review_count] )
+
+v_controller_decisions | AI Text Share =
+DIVIDE ( CALCULATE ( [Runs Saved], v_controller_decisions[ai_used_text] = TRUE () ), [Runs Saved] )
+
+// Rows saved before Phase 2.5 have no opened_at; MEDIAN skips their blank minutes.
+v_controller_decisions | Median Minutes to Decision =
+MEDIAN ( v_controller_decisions[minutes_to_decision] )
+
+v_controller_findings | Live Review Findings =
+CALCULATE ( COUNTROWS ( v_controller_findings ), v_controller_findings[severity] = "REVIEW" )
+
+// ---------- Pages 2-4: Synthetic portfolio ----------
+
+v_portfolio_projects | Contract Value =
+SUM ( v_portfolio_projects[contract_ttc] )
+
+v_portfolio_statements | Billed TTC =
+SUM ( v_portfolio_statements[ttc] )
+
+v_portfolio_statements | % Contract Billed =
+DIVIDE ( [Billed TTC], [Contract Value] )
+
+v_portfolio_statements | Remaining to Bill =
+[Contract Value] - [Billed TTC]
+
+v_portfolio_statements | Statements =
+COUNTROWS ( v_portfolio_statements )
+
+v_portfolio_statements | Pending Statements =
+CALCULATE ( [Statements], v_portfolio_statements[decision] = "Pending" )
+
+v_portfolio_statements | Rejected Statements =
+CALCULATE ( [Statements], v_portfolio_statements[decision] = "Rejected" )
+
+v_portfolio_findings | Review Findings =
+CALCULATE ( COUNTROWS ( v_portfolio_findings ), v_portfolio_findings[severity] = "REVIEW" )
+
+// Size of the problems, in DH. Differences can be negative, so the absolute value is summed.
+v_portfolio_findings | Difference Amount DH =
+CALCULATE (
+    SUMX ( v_portfolio_findings, ABS ( v_portfolio_findings[difference] ) ),
+    v_portfolio_findings[severity] = "REVIEW"
+)
+
+// Pending statements have a blank days_to_decision and are skipped by MEDIAN.
+v_portfolio_statements | Median Days to Decision =
+MEDIAN ( v_portfolio_statements[days_to_decision] )
+
+// Demo assumption: 5 days. Keep in sync with TARGET_DAYS in scripts/portfolio.py.
+v_portfolio_statements | % Decided Within Target =
+VAR TargetDays = 5
+VAR Decided =
+    FILTER ( v_portfolio_statements, NOT ISBLANK ( v_portfolio_statements[days_to_decision] ) )
+RETURN
+    DIVIDE (
+        COUNTROWS ( FILTER ( Decided, v_portfolio_statements[days_to_decision] <= TargetDays ) ),
+        COUNTROWS ( Decided )
+    )
+
+// Footer text, so every page states its source. Use it in a Card visual at the bottom of each page.
+v_portfolio_projects | Source Label Portfolio =
+"Synthetic portfolio — generated, not real"
+
+v_controller_decisions | Source Label Live =
+"Live app history — synthetic examples only"
