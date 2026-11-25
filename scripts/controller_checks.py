@@ -11,6 +11,8 @@ LABELS = {'works': 'works of month HT', 'previous': 'previous cumulative HT', 'c
 SOURCE_FIXED = 'fixed layout'
 SOURCE_AI = 'found by AI'
 SOURCE_EDITED = 'edited by reviewer'
+SOURCE_PDF_TEXT = 'PDF text (AI located)'
+SOURCE_VISION = 'read by AI from image'
 SEVERITIES = ('OK', 'WARNING', 'REVIEW', 'SKIPPED')
 EXAMPLES_DIR = ROOT / 'controller_examples'
 HISTORY_DIR = ROOT / 'demo_decomptes'
@@ -79,6 +81,19 @@ def parse_edits(raw_values):
         except ValueError:
             bad.append(field)
     return edits, bad
+
+
+def known_projects(folder=HISTORY_DIR):
+    """Project names found in the bundled history, used to normalise AI-read project names."""
+    names = []
+    for path in sorted(folder.glob('*.xlsx')):
+        try:
+            project = extract_decompte(path)['Project']
+        except ValueError:
+            continue
+        if project and project not in names:
+            names.append(project)
+    return tuple(names)
 
 
 def previous_from_history(current, folder=HISTORY_DIR):

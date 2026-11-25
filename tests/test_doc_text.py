@@ -27,3 +27,19 @@ def test_label_matches():
     assert label_matches('retention', 'Retenue de garantie 10%')
     assert not label_matches('cumulative', 'Cumul précédent HT')
     assert label_matches('previous', 'Cumul précédent HT')
+
+
+@pytest.mark.parametrize('project, number, expected', [
+    ('DEMO PROJECT — DECOMPTE D5', 'D5', ('DEMO PROJECT', 5)),
+    ('demo project', 'Décompte n° 5', ('DEMO PROJECT', 5)),
+    ('Other site', '12000', ('Other site', None)),
+    (None, None, ('', None)),
+    ('  Site A  ', 7, ('Site A', 7))])
+def test_normalize_identity(project, number, expected):
+    from scripts.doc_text import normalize_identity
+    assert normalize_identity(project, number, ('DEMO PROJECT',)) == expected
+
+
+def test_known_projects():
+    from scripts.controller_checks import known_projects
+    assert known_projects() == ('DEMO PROJECT',)

@@ -11,27 +11,44 @@ def _client(api_key):
     return genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=TIMEOUT_MS))
 
 
-def _generate(prompt, api_key, config, client_factory):
+def _generate(contents, api_key, config, client_factory):
+    """contents: the prompt string, or [file Part, prompt] for PDF/photo reading."""
     if not api_key:
         return None
     try:
         client = (client_factory or _client)(api_key)
-        response = client.models.generate_content(model=MODEL, contents=prompt, config=config)
+        response = client.models.generate_content(model=MODEL, contents=contents, config=config)
         return response.text
     except Exception:  # Network, quota, key, timeout, SDK changes: all mean "AI unavailable".
         return None
 
 
-def ask_json(prompt, schema, api_key, *, client_factory=None):
+def _json_answer(contents, schema, api_key, client_factory):
     from google.genai import types
     config = types.GenerateContentConfig(response_mime_type='application/json', response_schema=schema or None,
                                          temperature=0)
-    text = _generate(prompt, api_key, config, client_factory)
+    text = _generate(contents, api_key, config, client_factory)
     try:
         value = json.loads(text) if text else None
     except (TypeError, ValueError):
         return None
     return value if isinstance(value, dict) else None
+
+
+def ask_json(prompt, schema, api_key, *, client_factory=None):
+    return _json_answer(prompt, schema, api_key, client_factory)
+
+
+def ask_json_file(prompt, data, mime_type, schema, api_key, *, client_factory=None):
+    """Send one PDF or image with the prompt; same JSON rules and failure handling as ask_json."""
+    if not api_key:
+        return None
+    try:
+        from google.genai import types
+        part = types.Part.from_bytes(data=data, mime_type=mime_type)
+    except Exception:
+        return None
+    return _json_answer([part, prompt], schema, api_key, client_factory)
 
 
 def ask_text(prompt, api_key, *, client_factory=None):

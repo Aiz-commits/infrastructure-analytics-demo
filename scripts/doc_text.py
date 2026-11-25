@@ -44,3 +44,20 @@ def label_matches(field, text):
     if field == 'cumulative' and any(re.search(rf'\b{w}', text) for w in LABEL_KEYWORDS['previous']):
         return False
     return any(re.search(rf'\b{word}', text) for word in LABEL_KEYWORDS[field])
+
+
+def normalize_identity(project_text, number_text, known):
+    """AI-read project/number -> (known project name or trimmed text, statement number 1-10000 or None)."""
+    from .decompte_extractor import statement_number
+    number = None
+    match = re.search(r'\d+', clean_spaces(number_text)) if number_text is not None else None
+    if match:
+        try:
+            number = statement_number(match.group())
+        except ValueError:
+            number = None
+    text = clean_spaces(project_text or '').strip()
+    for name in known:
+        if name and normalize(name) in normalize(text):
+            return name, number
+    return text[:120], number
