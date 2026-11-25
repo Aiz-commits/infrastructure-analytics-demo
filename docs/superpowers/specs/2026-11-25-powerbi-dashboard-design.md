@@ -3,7 +3,7 @@
 Date: 2026-11-25
 Builds on: `docs/superpowers/specs/2026-11-21-ai-controller-design.md` (Phase 1) and
 `docs/superpowers/specs/2026-11-21-sql-memory-design.md` (Phase 1.5, live since PR #6).
-Repo: `infrastructure-analytics-demo` (assumed to be the "Excelium" project in the finance toolkit hub — NEEDS CONFIRMATION).
+Repo: `infrastructure-analytics-demo` — the **public LinkedIn demo**. The author also has a separate **Excelium** version (not in this repo). This spec covers the demo only: synthetic data, public sharing.
 
 ## 1. Intent and why
 
@@ -57,7 +57,8 @@ A dashboard built only on the live history would show activity (runs, decisions,
 
 | Tool | Role in Phase 2.5 |
 |---|---|
-| Excelium (this repo) | Source of truth: checks, history, portfolio generator, SQL views |
+| This demo repo | Source of truth: checks, history, portfolio generator, SQL views |
+| Excelium (separate version) | Not touched here. If the dashboard is later ported to Excelium, it needs its own privacy design (real data must never reach this public demo or its database) |
 | Finance plugins | (a) Excel/model check skill: audit the exported portfolio workbook and the Power BI totals against SQL (section 8). (b) Report/memo skill: one-page management commentary for the PDF export. Exact skill names NEEDS CONFIRMATION — the plugins are installed on the author's PC, not in cloud sessions |
 | FinceptTerminal | Design reference only: dense dark layout, KPI strip on top, small multiples, one accent colour for alerts. No data link |
 | awesome-quant | Not needed unless a library gap appears |
@@ -142,7 +143,7 @@ Slicers on pages 2–4: project, contractor, period. Theme: a `powerbi/theme.jso
 
 ## 12. Author steps (cannot be done in a cloud session)
 
-1. Confirm "Excelium" = this repo, and approach C.
+1. Confirm approach C for the demo.
 2. Run `powerbi/readonly_role.sql` in the Neon SQL editor; keep the reader password in a password manager.
 3. Run `python -m scripts.portfolio --load` locally with `DATABASE_URL` in `.streamlit/secrets.toml`.
 4. Build the report in Power BI Desktop following `powerbi/README.md`; take screenshots; export PDF.
