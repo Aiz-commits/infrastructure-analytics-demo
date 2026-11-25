@@ -1,5 +1,6 @@
 """Create synthetic examples only when explicitly invoked, never on import."""
 import argparse
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 from openpyxl import Workbook
@@ -53,6 +54,42 @@ def controller_example_values(policy):
     return {'works': works, 'previous': previous, 'cumulative': cumulative,
             'retention': expected['Retention'], 'net': expected['Net HT'], 'vat': vat,
             'ttc': amount(expected['Net HT'] + vat)}
+
+
+TABLE_HEADERS = (('cumulative', 'Cumul actuel HT'), ('previous', 'Cumul précédent HT'), ('works', 'Travaux du mois HT'))
+SUMMARY_LINES = (('retention', 'Retenue de garantie 10%'), ('net', 'Net HT'), ('vat', 'TVA 20%'), ('ttc', 'Total TTC'))
+DOCUMENT_HEADER = ('DEMO PROJECT - DECOMPTE D5', 'SYNTHETIC DATA - FOR DEMONSTRATION ONLY',
+                   'Projet : DEMO PROJECT     Décompte n° 5')
+
+
+def french_amount(value):
+    return f'{value:,.2f}'.replace(',', ' ').replace('.', ',')
+
+
+def draw_d5_pdf(values):
+    """The D5 statement as a one-page French PDF: a 3-column table row, then one labelled line per amount."""
+    from fpdf import FPDF
+    pdf = FPDF(format='A4')
+    pdf.set_creation_date(datetime(2026, 11, 25, tzinfo=timezone.utc))
+    pdf.add_page()
+    pdf.set_font('Helvetica', 'B', 14)
+    pdf.set_xy(15, 20)
+    pdf.cell(180, 8, DOCUMENT_HEADER[0])
+    pdf.set_font('Helvetica', size=10)
+    for row, text in enumerate(DOCUMENT_HEADER[1:], start=1):
+        pdf.set_xy(15, 20 + 8 * row)
+        pdf.cell(180, 8, text)
+    pdf.set_xy(15, 60)
+    for _, label in TABLE_HEADERS:
+        pdf.cell(60, 8, label)
+    pdf.set_xy(15, 68)
+    for field, _ in TABLE_HEADERS:
+        pdf.cell(60, 8, french_amount(values[field]), align='R')
+    for row, (field, label) in enumerate(SUMMARY_LINES):
+        pdf.set_xy(15, 84 + 9 * row)
+        pdf.cell(120, 8, label)
+        pdf.cell(60, 8, french_amount(values[field]), align='R')
+    return bytes(pdf.output())
 
 
 def _identity_sheet(workbook, title):
