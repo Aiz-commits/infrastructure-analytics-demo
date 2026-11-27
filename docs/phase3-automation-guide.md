@@ -111,7 +111,7 @@ the **ntfy** app.
 
 5. **n8n workflow.** Start n8n (below), open http://localhost:5678, then **Import from File** →
    `automation\n8n\decompte_inbox.json`. In the workflow:
-   - Replace `REPLACE_WITH_YOUR_SENDER_EMAIL` (node *Allowed sender + décompte files*) with the same address as
+   - Replace `REPLACE_WITH_YOUR_SENDER_EMAIL` (node *Demo Gmail inbox* → Options → Custom Email Rules, and node *Allowed sender + décompte files*) with the same address as
      `ALLOWED_SENDERS`.
    - Replace `REPLACE_WITH_YOUR_NTFY_TOPIC` (both *Phone alert* nodes) with your topic.
    - Node *Demo Gmail inbox* → new **IMAP** credential: user = demo Gmail address, password = App password,

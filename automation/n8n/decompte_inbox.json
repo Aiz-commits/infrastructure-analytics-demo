@@ -16,7 +16,7 @@
         "format": "resolved",
         "dataPropertyAttachmentsPrefixName": "attachment_",
         "options": {
-          "customEmailConfig": "[\"UNSEEN\"]"
+          "customEmailConfig": "[\"UNSEEN\", [\"FROM\", \"REPLACE_WITH_YOUR_SENDER_EMAIL\"]]"
         }
       }
     },
