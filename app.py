@@ -9,7 +9,7 @@ import streamlit as st
 from scripts.ai_reader import read_with_ai
 from scripts.ai_writer import Texts, findings_json, write_texts
 from scripts.audit import all_passed, audit_batch, display_frame
-from scripts.controller_checks import (EXAMPLES_DIR, FIELDS, LABELS, SOURCE_AI, SOURCE_EDITED, SOURCE_PDF_TEXT,
+from scripts.controller_checks import (AI_SOURCES, EXAMPLES_DIR, FIELDS, LABELS, SOURCE_AI, SOURCE_EDITED, SOURCE_PDF_TEXT,
                                        SOURCE_VISION, apply_edits, from_extractor, parse_edits,
                                        previous_from_history, review_count, run_checks)
 from scripts.controller_review import email_eml, memo_markdown, trail_row
@@ -134,7 +134,6 @@ def saved_page():
 PRIVACY_TEXT = ('This file contains no confidential data. It will be sent to Google Gemini (free tier), '
                 'which may use it to improve its products.')
 ICONS = {'OK': '✅ OK', 'WARNING': '⚠️ WARNING', 'REVIEW': '⚠️ REVIEW', 'SKIPPED': '⏭️ SKIPPED'}
-AI_SOURCES = (SOURCE_AI, SOURCE_PDF_TEXT, SOURCE_VISION)
 VISION_NOTICE = ('These numbers were typed by the AI from the picture. '
                  'Compare each one with the document before confirming.')
 

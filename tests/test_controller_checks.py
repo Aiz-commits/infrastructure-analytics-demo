@@ -113,3 +113,45 @@ def test_apply_edits_marks_source():
     assert edited.values['net'].source == SOURCE_AI
     typed = apply_edits(stmt(number=None, project=''), {}, project='P1', number=3)
     assert (typed.project, typed.number) == ('P1', 3)
+
+
+# Phase 3: one function per check (the agent's tools) must rebuild run_checks exactly.
+from scripts.controller_checks import (AI_SOURCES, CORE_CHECKS, SOURCE_PDF_TEXT, SOURCE_VISION,  # noqa: E402
+                                       check_contract_ceiling, run_one_check, value_warnings)
+
+SINGLE_CHECK_CASES = [
+    (stmt(), None), (stmt(ttc='113.00'), None), (stmt(vat=None), None), (stmt(uncertain=('net',)), None),
+    (stmt(number=5, previous='100.00', cumulative='200.00'), stmt(number=4)),
+    (stmt(number=5), stmt(number=3)), (stmt(number=2, project='OTHER'), stmt(number=1)),
+]
+
+
+@pytest.mark.parametrize('current,previous', SINGLE_CHECK_CASES)
+def test_run_checks_equals_sum_of_single_checks(current, previous):
+    warnings, filled = value_warnings(current)
+    singles = sum((run_one_check(name, filled, POLICY, previous) for name in CORE_CHECKS), [])
+    assert run_checks(current, previous, POLICY) == warnings + singles
+
+
+def test_n5_single_checks_match_run_checks():
+    current = from_extractor(extract_decompte(EXAMPLES_DIR / 'DEMO_DP_N5.xlsx'))
+    previous = previous_from_history(current)
+    warnings, filled = value_warnings(current)
+    singles = sum((run_one_check(name, filled, POLICY, previous) for name in CORE_CHECKS), [])
+    assert run_checks(current, previous, POLICY) == warnings + singles
+
+
+def test_contract_ceiling():
+    policy = replace(POLICY, contract_ttc=Decimal('5400000.00'), vat_rate=Decimal('0.20'))
+    exact = check_contract_ceiling(stmt(cumulative='4500000.00'), policy)
+    assert (exact.id, exact.severity, exact.difference) == ('contract_ceiling', 'OK', None)
+    above = check_contract_ceiling(stmt(cumulative='4500001.00'), policy)
+    assert above.severity == 'REVIEW' and above.difference == Decimal('1.20')
+    part = check_contract_ceiling(stmt(cumulative='3636000.00'), policy)
+    assert part.severity == 'OK' and '80.80 %' in part.evidence
+    assert check_contract_ceiling(stmt(cumulative=None), policy).severity == 'SKIPPED'
+    assert run_one_check('contract_ceiling', stmt(), policy, None)[0].id == 'contract_ceiling'
+
+
+def test_ai_sources_constant():
+    assert AI_SOURCES == (SOURCE_AI, SOURCE_PDF_TEXT, SOURCE_VISION)
