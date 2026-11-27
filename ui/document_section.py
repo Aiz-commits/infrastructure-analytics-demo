@@ -2,9 +2,10 @@
 import streamlit as st
 from scripts.ai_reader import MAX_UPLOAD_BYTES
 from scripts.controller_checks import load_saved_answer
-from scripts.documents import MIME, check_limits, detect_kind
-from scripts.pdf_reader import read_pdf_with_ai, trace_pdf
-from scripts.vision_reader import parse_vision_answer, read_with_vision
+from scripts.documents import check_limits, detect_kind
+from scripts.intake import read_document_with_ai
+from scripts.pdf_reader import trace_pdf
+from scripts.vision_reader import parse_vision_answer
 
 AI_CALL_LIMIT = 10
 SAVED_BADGE = 'Saved example answer (AI offline)'
@@ -33,13 +34,7 @@ def ai_call_allowed(cache_key):
 @st.cache_data(show_spinner=False, max_entries=100)
 def cached_document_read(digest, kind, _data, _key):
     """Live PDF/photo read. A PDF without usable text (a scan) goes to vision. Returns (statement, read_method)."""
-    if kind == 'pdf':
-        try:
-            statement, method = read_pdf_with_ai(_data, _key), 'PDF text'
-        except ValueError:  # NO_TEXT
-            statement, method = read_with_vision(_data, MIME['pdf'], _key), 'AI vision'
-    else:
-        statement, method = read_with_vision(_data, MIME[kind], _key), 'AI vision'
+    statement, method = read_document_with_ai(_data, kind, _key)
     if statement is None:
         raise NotCached()
     return statement, method
