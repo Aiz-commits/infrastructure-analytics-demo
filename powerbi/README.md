@@ -17,6 +17,8 @@ The synthetic portfolio has 4 projects, 3 fictional contractors and 31 statement
 
 | File | Use |
 |---|---|
+| `infrastructure_dashboard.pbix` | The finished report. Open it in Power BI Desktop (free, Windows) to click through the 4 pages |
+| `infrastructure_dashboard.pdf` | The same report as a PDF, for anyone without Power BI |
 | `measures.dax` | Every measure, with the table it belongs to |
 | `theme.json` | Dark report theme (View → Themes → Browse for themes). The colours were checked to stay distinguishable for colour-blind readers |
 | `readonly_role.sql` | Read-only Neon login for Power BI (views only) |
