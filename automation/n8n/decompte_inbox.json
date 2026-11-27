@@ -1,0 +1,177 @@
+{
+  "name": "Décompte inbox",
+  "nodes": [
+    {
+      "id": "e128905d-4770-40be-8114-7f19366605d2",
+      "name": "Demo Gmail inbox",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        96
+      ],
+      "parameters": {
+        "mailbox": "INBOX",
+        "postProcessAction": "read",
+        "format": "resolved",
+        "dataPropertyAttachmentsPrefixName": "attachment_",
+        "options": {
+          "customEmailConfig": "[\"UNSEEN\"]"
+        }
+      }
+    },
+    {
+      "id": "5c909126-55f9-4465-a7c7-24a8a8bb849e",
+      "name": "Allowed sender + décompte files",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Keep in sync with ALLOWED_SENDERS in .streamlit/secrets.toml (the API checks again).\nconst ALLOWED = ['REPLACE_WITH_YOUR_SENDER_EMAIL'];\nconst KEEP = /\\.(xlsx|pdf|jpe?g|png)$/i;\nconst out = [];\nfor (const item of $input.all()) {\n  const from = item.json.from;\n  const raw = typeof from === 'string' ? from : ((from && from.value && from.value[0] && from.value[0].address) || (from && from.text) || '');\n  const match = raw.match(/<([^>]+)>/);\n  const address = (match ? match[1] : raw).trim().toLowerCase();\n  if (!ALLOWED.includes(address)) continue; // Other senders stop here: no API call, no alert.\n  for (const file of Object.values(item.binary || {})) {\n    if (!KEEP.test(file.fileName || '')) continue;\n    out.push({ json: { sender: address, subject: item.json.subject || '', fileName: file.fileName }, binary: { data: file } });\n  }\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "eb1552a8-1816-4b8b-8c95-bd9cd9684023",
+      "name": "Send to AI Controller API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        96
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/intake",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "parameterType": "formData",
+              "name": "sender",
+              "value": "={{ $json.sender }}"
+            },
+            {
+              "parameterType": "formData",
+              "name": "subject",
+              "value": "={{ $json.subject }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "66aa0ea8-9125-42f6-bbf6-e51f4a0a032b",
+      "name": "Phone alert: not processed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        672,
+        192
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://ntfy.sh/",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ topic: 'REPLACE_WITH_YOUR_NTFY_TOPIC', title: 'Décompte non traité', message: 'Impossible de traiter ' + $('Allowed sender + décompte files').item.json.fileName + ' : ' + (($json.error && ($json.error.description || $json.error.message)) || 'erreur inconnue'), priority: 3, tags: ['x'] }) }}"
+      }
+    },
+    {
+      "id": "9572e5c9-aa9e-4d43-ae06-92d78ffab347",
+      "name": "Phone alert (ntfy)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://ntfy.sh/",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ topic: 'REPLACE_WITH_YOUR_NTFY_TOPIC', title: 'Décompte D' + ($json.number ?? '?') + ' — ' + $json.review_count + ' à vérifier', message: $json.summary + '\\n' + ($json.needs_confirmation ? 'Valeurs lues par l’IA : comparez-les avec le document.\\n' : '') + 'Touchez pour ouvrir la page de contrôle (code PIN requis).', click: $json.review_url, priority: $json.review_count > 0 ? 4 : 3, tags: [$json.review_count > 0 ? 'warning' : 'white_check_mark'], actions: [{ action: 'view', label: 'Ouvrir', url: $json.review_url }] }) }}"
+      }
+    },
+    {
+      "id": "f1328bfe-ac8e-4a87-8d98-04f063bd6b96",
+      "name": "Sticky Note 9c53fc8e",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        0
+      ],
+      "parameters": {
+        "content": "## Décompte inbox (Phase 3)\nUnread mail from an allowed sender → each .xlsx/.pdf/.jpg/.png goes to the local AI Controller API → phone alert with the review link (PIN required). Errors send a \"not processed\" alert. Setup: docs/phase3-automation-guide.md",
+        "color": 4,
+        "width": 608,
+        "height": 224
+      }
+    }
+  ],
+  "connections": {
+    "Demo Gmail inbox": {
+      "main": [
+        [
+          {
+            "node": "Allowed sender + décompte files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Allowed sender + décompte files": {
+      "main": [
+        [
+          {
+            "node": "Send to AI Controller API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to AI Controller API": {
+      "main": [
+        [
+          {
+            "node": "Phone alert (ntfy)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Phone alert: not processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
