@@ -63,3 +63,52 @@ def test_ask_json_file_failure_returns_none():
     client = fake_client(error=RuntimeError('quota'))
     assert ask_json_file('p', b'x', 'image/png', {}, 'k', client_factory=lambda key: client) is None
     assert ask_json_file('p', b'x', 'image/png', {}, None) is None
+
+
+# Phase 3: one tool-calling turn for the agent.
+from types import SimpleNamespace  # noqa: E402
+from scripts.llm import ask_with_tools, function_response  # noqa: E402
+
+DECLARATIONS = [{'name': 'check_vat', 'description': 'VAT check'}]
+
+
+def tool_client(calls=(), candidates=True, error=None):
+    seen = {}
+
+    def generate_content(**kwargs):
+        seen.update(kwargs)
+        if error:
+            raise error
+        content = SimpleNamespace(role='model', parts=['call'])
+        return SimpleNamespace(candidates=[SimpleNamespace(content=content)] if candidates else [],
+                               function_calls=[SimpleNamespace(name=n, args=a) for n, a in calls] or None)
+    return SimpleNamespace(models=SimpleNamespace(generate_content=generate_content)), seen
+
+
+def test_ask_with_tools_returns_content_and_calls_with_tools_config():
+    client, seen = tool_client(calls=[('check_vat', {})])
+    content, calls = ask_with_tools(['prompt'], DECLARATIONS, 'k', client_factory=lambda key: client)
+    assert calls == [('check_vat', {})] and content.role == 'model'
+    config = seen['config']
+    assert config.tools[0].function_declarations[0].name == 'check_vat'
+    assert config.automatic_function_calling.disable is True and config.temperature == 0
+
+
+def test_ask_with_tools_text_answer_gives_no_calls():
+    client, _ = tool_client(calls=[])
+    assert ask_with_tools(['p'], DECLARATIONS, 'k', client_factory=lambda key: client)[1] == []
+
+
+def test_ask_with_tools_failures_return_none():
+    def never(key):
+        raise AssertionError('client built without key')
+    assert ask_with_tools(['p'], DECLARATIONS, None, client_factory=never) is None
+    client, _ = tool_client(error=RuntimeError('quota'))
+    assert ask_with_tools(['p'], DECLARATIONS, 'k', client_factory=lambda key: client) is None
+    client, _ = tool_client(candidates=False)
+    assert ask_with_tools(['p'], DECLARATIONS, 'k', client_factory=lambda key: client) is None
+
+
+def test_function_response_part():
+    part = function_response('check_vat', {'severity': 'OK'})
+    assert part.function_response.name == 'check_vat' and part.function_response.response == {'severity': 'OK'}
