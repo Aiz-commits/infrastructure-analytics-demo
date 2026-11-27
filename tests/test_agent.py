@@ -112,3 +112,12 @@ def test_prompt_asks_for_reason_in_page_language_and_knows_contract():
     from scripts.agent import build_prompt
     assert 'in French' in build_prompt(n5(), 'fr') and 'in English' in build_prompt(n5(), 'en')
     assert 'contract value' in build_prompt(n5(), 'fr')
+
+
+def test_time_budget_stops_ai_and_guard_completes():
+    ticks = iter(range(0, 1000, 30))
+    ask = scripted(*[['check_vat']] * 20)
+    result = run_agent(n5(), POLICY, 'key', ask=ask, time_budget=60, clock=lambda: next(ticks))
+    assert len(ask.asked) <= 3
+    assert TraceStep('Python', 'AI took too long — the guard completes the checks', None, '') in result.trace
+    assert result.findings == expected_n5()

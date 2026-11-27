@@ -1,5 +1,6 @@
 """Phase 3 agent: Gemini chooses which checks to run (tool calls), Python runs them, and a guard runs any core
 check the AI skipped. The AI never computes or passes an amount: tools take no arguments and return no numbers."""
+import time
 from dataclasses import dataclass
 from . import llm
 from .ai_writer import LANGUAGES
@@ -57,8 +58,10 @@ def _tool_results(parts):
 
 
 def run_agent(statement, policy, api_key, *, ask=llm.ask_with_tools, previous_lookup=previous_from_history,
-              max_turns=8, language='fr'):
+              max_turns=8, language='fr', time_budget=60, clock=time.monotonic):
+    """time_budget (seconds): past it the AI is stopped and the guard finishes, so n8n gets an answer in time."""
     warnings, filled = value_warnings(statement)
+    started = clock()
     results, trace = {}, []
 
     def run(check):
@@ -69,6 +72,9 @@ def run_agent(statement, policy, api_key, *, ask=llm.ask_with_tools, previous_lo
     ai_used = False
     contents = [build_prompt(filled, language)]
     for _ in range(max_turns if api_key else 0):
+        if clock() - started > time_budget:
+            trace.append(TraceStep('Python', 'AI took too long — the guard completes the checks', None, ''))
+            break
         answer = ask(contents, TOOL_DECLARATIONS, api_key)
         if answer is None:
             if ai_used:

@@ -32,7 +32,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "// Keep in sync with ALLOWED_SENDERS in .streamlit/secrets.toml (the API checks again).\nconst ALLOWED = ['REPLACE_WITH_YOUR_SENDER_EMAIL'];\nconst KEEP = /\\.(xlsx|pdf|jpe?g|png)$/i;\nconst out = [];\nfor (const item of $input.all()) {\n  const from = item.json.from;\n  const raw = typeof from === 'string' ? from : ((from && from.value && from.value[0] && from.value[0].address) || (from && from.text) || '');\n  const match = raw.match(/<([^>]+)>/);\n  const address = (match ? match[1] : raw).trim().toLowerCase();\n  if (!ALLOWED.includes(address)) continue; // Other senders stop here: no API call, no alert.\n  for (const file of Object.values(item.binary || {})) {\n    if (!KEEP.test(file.fileName || '')) continue;\n    out.push({ json: { sender: address, subject: item.json.subject || '', fileName: file.fileName }, binary: { data: file } });\n  }\n}\nreturn out;"
+        "jsCode": "// Keep in sync with ALLOWED_SENDERS in .streamlit/secrets.toml (the API checks again).\nconst ALLOWED = ['REPLACE_WITH_YOUR_SENDER_EMAIL'];\nconst KEEP = /\\.(xlsx|pdf|jpe?g|png)$/i;\nconst IMAGE = /\\.(jpe?g|png)$/i;\nconst MIN_IMAGE_BYTES = 20 * 1024; // Smaller pictures are email signature logos: skipped, no alert.\nconst items = $input.all();\nconst out = [];\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const from = item.json.from;\n  const raw = typeof from === 'string' ? from : ((from && from.value && from.value[0] && from.value[0].address) || (from && from.text) || '');\n  const match = raw.match(/<([^>]+)>/);\n  const address = (match ? match[1] : raw).trim().toLowerCase();\n  if (!ALLOWED.includes(address)) continue; // Other senders stop here: no API call, no alert.\n  for (const [key, file] of Object.entries(item.binary || {})) {\n    const name = file.fileName || '';\n    if (!KEEP.test(name)) continue;\n    if (IMAGE.test(name)) {\n      const bytes = await this.helpers.getBinaryDataBuffer(i, key);\n      if (bytes.length < MIN_IMAGE_BYTES) continue;\n    }\n    out.push({ json: { sender: address, subject: item.json.subject || '', fileName: name }, binary: { data: file } });\n  }\n}\nreturn out;"
       }
     },
     {
@@ -71,7 +71,7 @@
           ]
         },
         "options": {
-          "timeout": 180000
+          "timeout": 300000
         }
       },
       "onError": "continueErrorOutput"

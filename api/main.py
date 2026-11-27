@@ -9,12 +9,15 @@ from scripts.agent_settings import load_settings, sender_address
 from scripts.agent_store import MAX_PIN_ATTEMPTS, RunStore
 from scripts.ai_writer import write_texts
 from scripts.controller_checks import OPTIONAL_CHECKS
+from scripts.documents import detect_kind
 from scripts.history import RunRecord, ensure_schema, get_engine, save_run
 from scripts.intake import IntakeError, bundled_hashes, read_file
 from scripts.policy import load_policy
 from .review_page import message_page, render_review
 
 MAX_BODY_BYTES = 10 * 1024 * 1024
+FILE_TYPES = {'xlsx': ('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx'),
+              'pdf': ('application/pdf', 'pdf'), 'jpeg': ('image/jpeg', 'jpg'), 'png': ('image/png', 'png')}
 LANGUAGE = 'fr'
 MESSAGES = {
     'fr': {'already': 'Ce décompte a déjà été traité.', 'wrong_pin': 'Code PIN incorrect ({n} / {max}).',
@@ -89,8 +92,9 @@ def create_app(settings, *, agent=run_agent, reader=read_file, writer=write_text
         return {'status': 'ok'}
 
     @app.post('/intake')
-    async def intake(request: Request, file: UploadFile = File(...), sender: str = Form(''), subject: str = Form(''),
-                     x_api_key: str = Header('')):
+    def intake(request: Request, file: UploadFile = File(...), sender: str = Form(''), subject: str = Form(''),
+               x_api_key: str = Header('')):
+        """Plain def: FastAPI runs it in a worker thread, so slow Gemini calls never freeze the review page."""
         if not _key_ok(settings, x_api_key):
             return _error(401, 'Missing or wrong X-API-Key.')
         if int(request.headers.get('content-length') or 0) > MAX_BODY_BYTES + 64 * 1024:
@@ -98,7 +102,7 @@ def create_app(settings, *, agent=run_agent, reader=read_file, writer=write_text
         address = sender_address(sender)
         if address not in settings.allowed_senders:
             return _error(403, 'This sender is not on the allowed list. Nothing was processed.')
-        data = await file.read(MAX_BODY_BYTES + 1)
+        data = file.file.read(MAX_BODY_BYTES + 1)
         if len(data) > MAX_BODY_BYTES:
             return _error(413, 'This email attachment is larger than 10 MB.')
         try:
@@ -152,8 +156,14 @@ def create_app(settings, *, agent=run_agent, reader=read_file, writer=write_text
         run, refused = _checked_run(run_id, t)
         if refused:
             return refused
-        return Response(store.file_path(run).read_bytes(), media_type='application/octet-stream',
-                        headers={'Content-Disposition': 'attachment; filename="decompte"'})
+        data = store.file_path(run).read_bytes()
+        try:
+            kind = detect_kind(data)
+        except ValueError:
+            kind = None
+        media, extension = FILE_TYPES.get(kind, ('application/octet-stream', 'bin'))
+        return Response(data, media_type=media, headers={  # inline + real type: opens on a phone.
+            'Content-Disposition': f'inline; filename="decompte.{extension}"', 'Cache-Control': 'no-store'})
 
     @app.post('/review/{run_id}/decision', response_class=HTMLResponse)
     def decision(run_id: int, t: str = Form(''), decision: str = Form(''), pin: str = Form(''),

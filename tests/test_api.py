@@ -226,3 +226,19 @@ def test_save_public_only_bundled_and_strips_optional(tmp_path, fakes):
     assert tuple(row) == ('fixed layout via email', 'Approved') and 'contract_ceiling' not in ids and 'vat' in ids
     broken = Settings(KEY, PIN, frozenset({'x@y.z'}), 'http://pc', None, 'postgresql://u:p@127.0.0.1:1/db', tmp_path)
     assert save_public(broken, store.get(bundled_id)) == 'Public history not updated (database unavailable).'
+
+
+def test_intake_runs_in_worker_thread_not_event_loop(tmp_path, fakes):
+    import inspect
+    app = make_client(tmp_path, fakes).app
+    route = next(r for r in app.routes if getattr(r, 'path', '') == '/intake')
+    assert not inspect.iscoroutinefunction(route.endpoint)  # Slow Gemini calls must not freeze the review page.
+
+
+def test_original_file_opens_on_phone(tmp_path, fakes):
+    client = make_client(tmp_path, fakes)
+    run_id, token = review_link(intake(client))
+    response = client.get(f'/review/{run_id}/file', params={'t': token})
+    assert response.headers['content-type'].startswith('application/vnd.openxmlformats-officedocument.spreadsheetml')
+    assert response.headers['content-disposition'] == 'inline; filename="decompte.xlsx"'
+    assert response.headers['cache-control'] == 'no-store'

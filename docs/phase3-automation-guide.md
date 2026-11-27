@@ -128,6 +128,14 @@ the **ntfy** app.
 
 ### Every time you use it
 
+Open two PowerShell windows. In each one, first go to the project folder (change the path if yours is different):
+
+```powershell
+cd $env:USERPROFILE\projects\infrastructure-analytics-demo
+```
+
+Then run one of these per window:
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File automation\start_n8n.ps1
 ```

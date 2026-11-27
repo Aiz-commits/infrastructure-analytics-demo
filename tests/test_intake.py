@@ -29,7 +29,7 @@ def test_image_with_no_values_is_rejected(monkeypatch):
     empty = Statement('', None, {f: ReadValue(f, None, None, SOURCE_VISION) for f in FIELDS})
     monkeypatch.setattr(intake, 'read_with_vision', lambda data, mime, key: empty)
     with pytest.raises(IntakeError) as error:
-        read_file(b'\x89PNG\r\n\x1a\n' + b'0' * 100, 'key')
+        read_file(b'\x89PNG\r\n\x1a\n' + b'0' * 30000, 'key')
     assert error.value.status == 422 and str(error.value) == 'No décompte values found in this file.'
 
 
@@ -57,7 +57,7 @@ def test_ai_reader_failure_falls_back_or_503(monkeypatch):
     assert read_file(pdf, 'key').read_method == 'PDF text (saved)'  # bundled: saved answer
     monkeypatch.setattr(intake, 'read_with_vision', lambda data, mime, key: None)
     with pytest.raises(IntakeError) as error:
-        read_file(b'\x89PNG\r\n\x1a\n' + b'1' * 100, 'key')
+        read_file(b'\x89PNG\r\n\x1a\n' + b'1' * 30000, 'key')
     assert error.value.status == 503
 
 
@@ -66,3 +66,12 @@ def test_bundled_hashes_cover_examples_and_history():
     assert len(hashes) == 8  # 4 controller examples + DEMO_DP_N1..N4
     from hashlib import sha256
     assert sha256((EXAMPLES_DIR / 'DEMO_DP_N5.xlsx').read_bytes()).hexdigest() in hashes
+
+
+def test_tiny_image_rejected_without_ai_call(monkeypatch):
+    def never(*args):
+        raise AssertionError('AI called for a logo-sized image')
+    monkeypatch.setattr(intake, 'read_with_vision', never)
+    with pytest.raises(IntakeError) as error:
+        read_file(b'\x89PNG\r\n\x1a\n' + b'0' * 5000, 'key')
+    assert error.value.status == 422 and 'too small' in str(error.value)

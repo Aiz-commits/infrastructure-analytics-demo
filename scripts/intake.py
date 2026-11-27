@@ -14,6 +14,7 @@ from .workbooks import workbook_bytes
 
 UNAVAILABLE = 'AI reading is unavailable right now. Try again later.'
 NO_VALUES = 'No décompte values found in this file.'
+MIN_IMAGE_BYTES = 20 * 1024
 
 
 class IntakeError(ValueError):
@@ -103,6 +104,8 @@ def read_file(data, api_key):
         check_limits(kind, data)
     except ValueError as error:
         raise IntakeError(str(error), 413 if 'larger than' in str(error) else 422) from error
+    if kind in ('jpeg', 'png') and len(data) < MIN_IMAGE_BYTES:  # Email signature logos: no AI call.
+        raise IntakeError('This image is too small to be a décompte photo (under 20 KB).', 422)
     statement, method = _read_workbook(data, api_key) if kind == 'xlsx' else _read_document(data, kind, api_key)
     if all(value.value is None for value in statement.values.values()):
         raise IntakeError(NO_VALUES, 422)
