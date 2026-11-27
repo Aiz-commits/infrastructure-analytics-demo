@@ -2,6 +2,7 @@
 check the AI skipped. The AI never computes or passes an amount: tools take no arguments and return no numbers."""
 from dataclasses import dataclass
 from . import llm
+from .ai_writer import LANGUAGES
 from .controller_checks import (CHECK_ORDER, CORE_CHECKS, FIELDS, LABELS, previous_from_history, run_one_check,
                                 value_warnings)
 
@@ -38,15 +39,16 @@ class AgentResult:
     ai_used: bool
 
 
-def build_prompt(statement):
+def build_prompt(statement, language='fr'):
     values = '\n'.join(f'- {LABELS[f]}: {"missing" if statement.values[f].value is None else statement.values[f].value}'
                        for f in FIELDS)
     return (f'You are a junior auditor checking a construction progress statement (décompte).\n'
             f'Project: {statement.project or "unknown"}; statement number: {statement.number or "unknown"}.\n'
             f'Values read from the document (DH):\n{values}\n\n'
+            'Python already knows the contract value, the rates and the previous décomptes; the tools use them. '
             'Choose the checks this décompte needs and call them. Python runs each check and tells you the result. '
             'Never compute amounts yourself. When you are done, call finish with one sentence explaining any check '
-            'you chose not to run.')
+            f'you chose not to run, written in {LANGUAGES.get(language, "English")}.')
 
 
 def _tool_results(parts):
@@ -55,7 +57,7 @@ def _tool_results(parts):
 
 
 def run_agent(statement, policy, api_key, *, ask=llm.ask_with_tools, previous_lookup=previous_from_history,
-              max_turns=8):
+              max_turns=8, language='fr'):
     warnings, filled = value_warnings(statement)
     results, trace = {}, []
 
@@ -65,7 +67,7 @@ def run_agent(statement, policy, api_key, *, ask=llm.ask_with_tools, previous_lo
             results[check] = run_one_check(check, filled, policy, previous)
 
     ai_used = False
-    contents = [build_prompt(filled)]
+    contents = [build_prompt(filled, language)]
     for _ in range(max_turns if api_key else 0):
         answer = ask(contents, TOOL_DECLARATIONS, api_key)
         if answer is None:

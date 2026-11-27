@@ -106,3 +106,9 @@ def test_declarations_have_no_check_parameters():
     names = {d['name'] for d in TOOL_DECLARATIONS}
     assert names == set(ALL_CORE) | {'check_contract_ceiling', 'finish'}
     assert all('parameters' not in d for d in TOOL_DECLARATIONS if d['name'] != 'finish')
+
+
+def test_prompt_asks_for_reason_in_page_language_and_knows_contract():
+    from scripts.agent import build_prompt
+    assert 'in French' in build_prompt(n5(), 'fr') and 'in English' in build_prompt(n5(), 'en')
+    assert 'contract value' in build_prompt(n5(), 'fr')
