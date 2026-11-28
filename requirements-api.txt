@@ -1,0 +1,6 @@
+# Phase 3 local API only (not needed by the Streamlit app). Install: .venv\Scripts\python.exe -m pip install -r requirements-api.txt
+-r requirements.txt
+fastapi==0.165.0
+uvicorn==0.54.0
+python-multipart==0.0.33
+httpx==0.28.1

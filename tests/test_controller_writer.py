@@ -147,3 +147,13 @@ def test_prompt_contains_findings_json_only(n5_findings):
 
 def test_texts_dataclass_fields():
     assert Texts('m', 's', 'b', True).ai_used is True
+
+
+def test_contract_ceiling_has_french_title_and_evidence():
+    from scripts.controller_checks import check_contract_ceiling, from_extractor
+    from scripts.decompte_extractor import extract_decompte
+    from scripts.controller_checks import EXAMPLES_DIR
+    from scripts.ai_writer import findings_json
+    finding = check_contract_ceiling(from_extractor(extract_decompte(EXAMPLES_DIR / 'DEMO_DP_N5.xlsx')), POLICY)
+    text = findings_json([finding], language='fr')
+    assert 'Plafond du marché' in text and 'du marché TTC' in text and 'Contract ceiling' not in text

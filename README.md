@@ -104,6 +104,20 @@ and drafts the audit memo and contractor email for human approval.
   `APP_URL` (Settings → Secrets and variables → Actions → Variables). GitHub pauses scheduled
   workflows after 60 days without commits; push any commit, or re-enable it when GitHub emails you.
 
+## Phase 3 — email automation (local demo)
+
+Email a décompte to a demo inbox and get a phone alert with a review link. The AI picks the
+checks; Python does every calculation; a guard runs any core check the AI skipped; you approve
+or reject on the phone with a PIN. Nothing is emailed or paid automatically.
+
+- **Plain-language guide (how it works, what each word means, setup, troubleshooting):**
+  [docs/phase3-automation-guide.md](docs/phase3-automation-guide.md)
+- **Parts:** `api/` (FastAPI, `requirements-api.txt`), `scripts/agent.py` (AI tool calls + guard),
+  `scripts/intake.py`, `scripts/agent_store.py` (local SQLite in git-ignored `data/`),
+  `automation/n8n/decompte_inbox.json` (IMAP → API → ntfy), `automation/start_*.ps1`.
+- **Runs on your PC only.** The live Streamlit site is unchanged; approvals of the bundled demo
+  files also appear in its public history, marked "via email".
+
 ## Power BI management dashboard
 
 A 4-page Power BI report built on SQL views. Streamlit stays the working tool; Power BI is the

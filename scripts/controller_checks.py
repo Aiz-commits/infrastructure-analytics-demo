@@ -15,6 +15,10 @@ SOURCE_EDITED = 'edited by reviewer'
 SOURCE_PDF_TEXT = 'PDF text (AI located)'
 SOURCE_VISION = 'read by AI from image'
 SEVERITIES = ('OK', 'WARNING', 'REVIEW', 'SKIPPED')
+AI_SOURCES = (SOURCE_AI, SOURCE_PDF_TEXT, SOURCE_VISION)
+CORE_CHECKS = ('retention', 'net', 'vat', 'ttc', 'cumulative', 'history')  # Never skipped (Phase 3 guard).
+OPTIONAL_CHECKS = ('contract_ceiling',)
+CHECK_ORDER = ('retention', 'net', 'vat', 'ttc', 'cumulative', 'continuity', 'sequence', 'contract_ceiling')
 EXAMPLES_DIR = ROOT / 'controller_examples'
 HISTORY_DIR = ROOT / 'demo_decomptes'
 NO_PREVIOUS = 'skipped — no previous décompte'
@@ -143,30 +147,33 @@ def _skipped(check_id, title, missing):
                    {}, None, 'missing input value')
 
 
-def _arithmetic(current, policy):
+def _arithmetic_specs(current, policy):
+    """check id -> (title, input fields, expected-value function, stated field)."""
     v = {field: current.values[field].value for field in FIELDS}
     rate, vat_rate = f'{policy.retention_rate:.0%}', f'{policy.vat_rate:.0%}'
     vat_field = 'net' if policy.vat_base == 'net_after_retention' else 'works'
     retention_inputs = ('works', 'retention') + (('cumulative', 'previous') if policy.retention_cap is not None else ())
-    checks = [
-        ('retention', f'Retention {rate} of works', retention_inputs,
-         lambda: expected_amounts(v['works'], v['cumulative'], v['previous'], policy)['Retention'], 'retention'),
-        ('net', 'Net HT = works − retention', ('works', 'retention', 'net'),
-         lambda: amount(v['works'] - v['retention']), 'net'),
-        ('vat', f'VAT {vat_rate} of {LABELS[vat_field]}', (vat_field, 'vat'),
-         lambda: amount(v[vat_field] * policy.vat_rate), 'vat'),
-        ('ttc', 'TTC = net HT + VAT', ('net', 'vat', 'ttc'), lambda: amount(v['net'] + v['vat']), 'ttc'),
-        ('cumulative', 'Cumulative HT = previous cumulative + works', ('previous', 'works', 'cumulative'),
-         lambda: amount(v['previous'] + v['works']), 'cumulative'),
-    ]
-    findings = []
-    for check_id, title, inputs, expected, stated_field in checks:
-        missing = [field for field in inputs if v[field] is None]
-        if missing:
-            findings.append(_skipped(check_id, title, missing))
-        else:
-            findings.append(_compare(check_id, title, v[stated_field], expected(), _cells(current, *inputs), policy))
-    return findings
+    return v, {
+        'retention': (f'Retention {rate} of works', retention_inputs,
+                      lambda: expected_amounts(v['works'], v['cumulative'], v['previous'], policy)['Retention'],
+                      'retention'),
+        'net': ('Net HT = works − retention', ('works', 'retention', 'net'),
+                lambda: amount(v['works'] - v['retention']), 'net'),
+        'vat': (f'VAT {vat_rate} of {LABELS[vat_field]}', (vat_field, 'vat'),
+                lambda: amount(v[vat_field] * policy.vat_rate), 'vat'),
+        'ttc': ('TTC = net HT + VAT', ('net', 'vat', 'ttc'), lambda: amount(v['net'] + v['vat']), 'ttc'),
+        'cumulative': ('Cumulative HT = previous cumulative + works', ('previous', 'works', 'cumulative'),
+                       lambda: amount(v['previous'] + v['works']), 'cumulative'),
+    }
+
+
+def _arithmetic_check(check_id, current, policy):
+    v, specs = _arithmetic_specs(current, policy)
+    title, inputs, expected, stated_field = specs[check_id]
+    missing = [field for field in inputs if v[field] is None]
+    if missing:
+        return _skipped(check_id, title, missing)
+    return _compare(check_id, title, v[stated_field], expected(), _cells(current, *inputs), policy)
 
 
 def _history(current, previous, policy):
@@ -195,7 +202,23 @@ def _history(current, previous, policy):
     return [_compare('continuity', f'Continuity {label}', stated, expected, evidence, policy), sequence]
 
 
-def run_checks(current, previous, policy):
+def check_contract_ceiling(current, policy):
+    """Optional (Phase 3): contract progress = cumulative HT × (1 + VAT) ÷ contract TTC, the live app's formula."""
+    title = 'Contract ceiling (cumulative TTC ≤ contract)'
+    cumulative = current.values['cumulative'].value if current.values.get('cumulative') else None
+    if cumulative is None:
+        return _skipped('contract_ceiling', title, ['cumulative'])
+    billed = amount(cumulative * (1 + policy.vat_rate))
+    ratio = billed / policy.contract_ttc * 100
+    evidence = f'{ratio:.2f} % of contract TTC {policy.contract_ttc:,.2f}; {_cells(current, "cumulative")}'
+    if billed > policy.contract_ttc:
+        return Finding('contract_ceiling', 'REVIEW', title, {'stated': billed, 'expected': policy.contract_ttc},
+                       amount(billed - policy.contract_ttc), evidence)
+    return Finding('contract_ceiling', 'OK', title, {'stated': billed, 'expected': policy.contract_ttc}, None, evidence)
+
+
+def value_warnings(current):
+    """-> (missing/uncertain value warnings, the statement with every field present). Always Python, never AI."""
     findings = []
     for field in FIELDS:
         read = current.values.get(field)
@@ -206,5 +229,18 @@ def run_checks(current, previous, policy):
             findings.append(Finding(f'uncertain:{field}', 'WARNING', f'Uncertain label: {LABELS[field]}',
                                     {'stated': read.value}, None, f'cell {read.cell} has no matching label'))
     values = {field: current.values.get(field) or ReadValue(field, None, None, SOURCE_AI) for field in FIELDS}
-    current = replace(current, values=values)
-    return findings + _arithmetic(current, policy) + _history(current, previous, policy)
+    return findings, replace(current, values=values)
+
+
+def run_one_check(name, current, policy, previous):
+    """One agent tool. `current` must come from value_warnings (all fields present)."""
+    if name == 'history':
+        return _history(current, previous, policy)
+    if name == 'contract_ceiling':
+        return [check_contract_ceiling(current, policy)]
+    return [_arithmetic_check(name, current, policy)]
+
+
+def run_checks(current, previous, policy):
+    findings, current = value_warnings(current)
+    return findings + sum((run_one_check(name, current, policy, previous) for name in CORE_CHECKS), [])

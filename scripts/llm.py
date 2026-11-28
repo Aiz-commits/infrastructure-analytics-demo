@@ -51,6 +51,31 @@ def ask_json_file(prompt, data, mime_type, schema, api_key, *, client_factory=No
     return _json_answer([part, prompt], schema, api_key, client_factory)
 
 
+def ask_with_tools(contents, declarations, api_key, *, client_factory=None):
+    """One agent turn with function calling (Phase 3). -> (model content to send back unchanged, [(name, args)])
+    or None when the AI is unavailable. Python runs every tool; the SDK never calls functions itself."""
+    if not api_key:
+        return None
+    try:
+        from google.genai import types
+        config = types.GenerateContentConfig(
+            tools=[types.Tool(function_declarations=declarations)], temperature=0,
+            automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True))
+        client = (client_factory or _client)(api_key)
+        response = client.models.generate_content(model=MODEL, contents=contents, config=config)
+        if not response.candidates:
+            return None
+        calls = [(call.name, dict(call.args or {})) for call in (response.function_calls or [])]
+        return response.candidates[0].content, calls
+    except Exception:  # Same rule as _generate: any failure means "AI unavailable".
+        return None
+
+
+def function_response(name, payload):
+    from google.genai import types
+    return types.Part.from_function_response(name=name, response=payload)
+
+
 def ask_text(prompt, api_key, *, client_factory=None):
     from google.genai import types
     text = _generate(prompt, api_key, types.GenerateContentConfig(temperature=0.2), client_factory)

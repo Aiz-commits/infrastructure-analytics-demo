@@ -11,11 +11,13 @@ _PAIR = re.compile(r'D\d+ → D\d+')
 TITLES_FR = {'retention': 'Retenue de garantie', 'net': 'Net HT = travaux − retenue', 'vat': 'TVA',
              'ttc': 'TTC = net HT + TVA', 'cumulative': 'Cumul HT = cumul précédent + travaux du mois',
              'continuity': 'Continuité avec le décompte précédent', 'sequence': 'Suite des numéros de décompte',
-             'missing': 'Valeur non trouvée dans le fichier', 'uncertain': 'Libellé incertain pour une valeur lue'}
+             'missing': 'Valeur non trouvée dans le fichier', 'uncertain': 'Libellé incertain pour une valeur lue',
+             'contract_ceiling': 'Plafond du marché (cumul TTC ≤ montant du marché)'}
 FIELDS_FR = {'works': 'travaux du mois HT', 'previous': 'cumul précédent HT', 'cumulative': 'cumul HT',
              'retention': 'retenue', 'net': 'net HT', 'vat': 'TVA', 'ttc': 'total TTC'}
 # English evidence phrases -> French, longest first so "previous cumulative HT" wins over "cumulative HT".
 EVIDENCE_FR = [('skipped — no previous décompte', 'non vérifié — pas de décompte précédent'),
+               ('of contract TTC', 'du marché TTC'),
                ('not found in the file; never invented', 'non trouvée dans le fichier ; jamais inventée'),
                ('statement number missing', 'numéro de décompte manquant'), ('consecutive numbers', 'numéros consécutifs'),
                ('missing input value', 'valeur manquante'), ('sequence gap', 'numéros manquants'),
